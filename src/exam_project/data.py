@@ -10,6 +10,11 @@ from PIL import Image
 import numpy as np
 
 
+# Constants for standardization
+STD_EPSILON = 1e-8  # Minimum standard deviation to avoid division by zero
+STD_FALLBACK = 1.0  # Fallback value when standard deviation is too small
+
+
 class MyDataset(Dataset):
     """Dataset class for loading processed data.
     
@@ -136,8 +141,8 @@ def process_data(raw_path: str, processed_path: str, val_split: float = 0.15):
     train_mean = train_images.mean()
     train_std = train_images.std()
     
-    if train_std < 1e-8:
-        train_std = 1.0
+    if train_std < STD_EPSILON:
+        train_std = STD_FALLBACK
     
     train_images = (train_images - train_mean) / train_std
     val_images = (val_images - train_mean) / train_std
