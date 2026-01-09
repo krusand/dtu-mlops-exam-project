@@ -63,13 +63,12 @@ def preprocess(data_path: Path, output_folder: Path) -> None:
     dataset.preprocess(output_folder)
 '''
 import kagglehub
-from dotenv import load_dotenv
-
+import os
 if __name__ == "__main__":
-    #Set KAGGLEHUB_CACHE via .env
-    load_dotenv()
+    #Set KAGGLEHUB_CACHE environment variable
+    os.environ["KAGGLEHUB_CACHE"] = "data/"
 
-    # Download latest version
+    #Download latest version
     path = kagglehub.dataset_download("msambare/fer2013")
 
     print("Path to dataset files:", path)
