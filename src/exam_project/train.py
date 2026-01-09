@@ -1,4 +1,4 @@
-from exam_project.model import CustomCNN, ANNClassifier
+from exam_project.model import BaseCNN, BaseANN
 from exam_project.data import load_data
 from pytorch_lightning import LightningModule, Trainer
 from torch import nn, optim
@@ -42,7 +42,7 @@ def train():
     val = torch.utils.data.DataLoader(val, persistent_workers=True, num_workers=9)
     test = torch.utils.data.DataLoader(test, persistent_workers=True, num_workers=9)
     
-    model = ANNClassifier()
+    model = BaseANN()
     trainer = get_trainer(model, trainer_args=trainer_args)
     trainer.fit(model=model, train_dataloaders=train, val_dataloaders=val)
     torch.save(model.state_dict(), "models/checkpoint.pth")
@@ -50,7 +50,7 @@ def train():
 
 
 def load():
-    model = CustomCNN()
+    model = BaseCNN()
     state_dict = torch.load("checkpoint.pth")
     model.load_state_dict(state_dict)
 

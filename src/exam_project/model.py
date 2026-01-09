@@ -105,7 +105,7 @@ class BaseANN(LightningModule):
         return torch.optim.Adam(self.parameters(), lr=1e-3)
     
 if __name__ == "__main__":
-    model = CustomCNN(img_size=48, output_dim=7)
+    model = BaseCNN(img_size=48, output_dim=7)
     # Create a random input tensor with shape (batch=1, channels=1, H=img_size, W=img_size)
     x = torch.rand(2, 1, model.img_size, model.img_size)
     output = model(x)
@@ -115,7 +115,7 @@ if __name__ == "__main__":
 
 
 
-    ann = ANNClassifier(num_classes=7, hidden=(512, 256), dropout=0.3)
+    ann = BaseANN(num_classes=7, hidden=(512, 256), dropout=0.3)
 
     # Create a random input tensor: (batch=2, channels=1, H=48, W=48)
     x = torch.rand(2, 1, 48, 48)
