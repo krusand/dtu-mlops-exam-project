@@ -22,7 +22,7 @@ dependencies = [
     "kagglehub>=0.4.0",
     "numpy>=2.4.0",
     "torch==2.6.0",
-    "typer==0.15.1",
+    "typer==0.21.1",
     "uvicorn==0.34.0",
 ]
 
