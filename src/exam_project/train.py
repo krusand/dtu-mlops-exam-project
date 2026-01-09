@@ -1,4 +1,5 @@
-from exam_project.model import Model
+from exam_project.model import CustomCNN
+from exam_project.data import load_data
 from pytorch_lightning import LightningModule, Trainer
 from torch import nn, optim
 import torch
@@ -11,36 +12,7 @@ from torchvision import transforms
 from torchvision.datasets import DatasetFolder
 import os
 
-# Function to open images
-def pil_loader(path):
-    with open(path, 'rb') as f:
-        img = Image.open(f)
-        return img.convert('L')# grayscale==1 channel
-# Transform: convert to tensor and optionally normalize
-
-def get_transform():
-    transform = transforms.Compose([
-        transforms.ToTensor(), # converts PIL image to tensor with values [0,1]
-    ])
-    return transform
-def get_dataset(root, transform):
-    dataset = DatasetFolder(
-        root=root, # replace with your folder path
-        loader=pil_loader,
-        extensions=['jpg'],
-        transform=transform
-    )
-    return dataset
-
-
-def load_data():
-    root = 'data/raw/datasets/msambare/fer2013/versions/1/'
-    transform = get_transform()
-    train_dataset = get_dataset(os.path.join(root,'train'), transform)
-    test_dataset = get_dataset(os.path.join(root,'test'), transform)
-    return train_dataset, test_dataset, test_dataset
-
-    
+DEVICE = 'cuda' if torch.cuda.is_available() else 'mps' if torch.mps.is_available() else 'cpu'
 
 def get_trainer(model, trainer_args):
     """
@@ -50,7 +22,9 @@ def get_trainer(model, trainer_args):
         model: The model class
         trainer_args: Training arguments
     """
+    return Trainer(**trainer_args)
 
+    # IMPLEMENT WHEN WE GET HUGGINGFACE MODELS
     if model == "lightning":
         trainer = Trainer(**trainer_args)
     elif model == "huggingface":
@@ -62,9 +36,11 @@ def train():
     """
     Trains the model
     """
-    trainer_args = dict()
-    train, val, test = load_data()
-    model = Model()
+    trainer_args = {"max_epochs": 1,'limit_train_batches': 0.05, 'accelerator': DEVICE}
+    train, val = load_data(processed_dir='data/processed/')
+    train, val = torch.utils.data.DataLoader(train, persistent_workers=True, num_workers=9), torch.utils.data.DataLoader(val, persistent_workers=True, num_workers=9)
+    
+    model = CustomCNN(img_size=48, output_dim=7)
     trainer = get_trainer(model, trainer_args=trainer_args)
     trainer.fit(model=model, train_dataloaders=train, val_dataloaders=val)
     torch.save(model.state_dict(), "models/checkpoint.pth")
@@ -72,11 +48,10 @@ def train():
 
 
 def load():
-    model = Model()
+    model = CustomCNN()
     state_dict = torch.load("checkpoint.pth")
     model.load_state_dict(state_dict)
 
 
 if __name__ == "__main__":
-    img = torchvision.io.read_image(path="data/raw/datasets/msambare/fer2013/versions/1/test/angry/PrivateTest_88305.jpg")
     train()

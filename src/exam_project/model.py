@@ -1,9 +1,9 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from pytorch_lightning import LightningModule
 
-
-class CustomCNN(nn.Module):
+class CustomCNN(LightningModule):
     """Our custom CNN to classify facial expressions."""
     def __init__(self, img_size: int, output_dim: int):
         super(CustomCNN, self).__init__()
