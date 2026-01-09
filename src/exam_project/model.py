@@ -103,6 +103,7 @@ class ANNClassifier(LightningModule):
 
     def configure_optimizers(self):
         return torch.optim.Adam(self.parameters(), lr=1e-3)
+    
 if __name__ == "__main__":
     model = CustomCNN(img_size=48, output_dim=7)
     # Create a random input tensor with shape (batch=1, channels=1, H=img_size, W=img_size)
