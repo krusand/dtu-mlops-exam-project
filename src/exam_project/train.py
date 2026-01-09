@@ -1,5 +1,5 @@
 from exam_project.model import Model
-from exam_project.data import MyDataset
+from exam_project.data import load_data
 from pytorch_lightning import LightningModule, Trainer
 from torch import nn, optim
 import torch
@@ -20,13 +20,23 @@ def get_trainer(model, trainer_args):
         trainer = transformers.Trainer(**trainer_args)
 
     return trainer
-    
+
 def train():
-    train, val, test = MyDataset("data/raw")
+    """
+    Trains the model
+    """
+    trainer_args = dict()
+    train, val, test = load_data("data/raw")
     model = Model()
-    trainer = get_trainer()
+    trainer = get_trainer(model, trainer_args=trainer_args)
     trainer.fit(model=model)
-    # add rest of your training code here
+    torch.save(model.state_dict(), "models/checkpoint.pth")
+
+
+def load():
+    model = Model()
+    state_dict = torch.load("checkpoint.pth")
+    model.load_state_dict(state_dict)
 
 
 if __name__ == "__main__":
