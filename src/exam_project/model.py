@@ -3,10 +3,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 from pytorch_lightning import LightningModule
 
-class CustomCNN(nn.Module):
+class BaseCNN(LightningModule):
     """Our custom CNN to classify facial expressions."""
     def __init__(self, img_size: int, output_dim: int):
-        super(CustomCNN, self).__init__()
+        super(BaseCNN, self).__init__()
 
         self.img_size = img_size
         self.output_dim = output_dim
@@ -54,7 +54,7 @@ class CustomCNN(nn.Module):
         return torch.optim.Adam(self.parameters(), lr=1e-3)
 
 
-class ANNClassifier(LightningModule):
+class BaseANN(LightningModule):
     """Simple MLP for 48x48 grayscale images (7 classes)."""
 
     def __init__(

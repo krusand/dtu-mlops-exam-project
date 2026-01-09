@@ -179,3 +179,5 @@ cython_debug/
 
 # Data
 data/
+models/*
+lightning_logs/
