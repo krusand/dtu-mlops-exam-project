@@ -79,7 +79,7 @@ def load_images_from_folder(folder_path: Path) -> Tuple[torch.Tensor, torch.Tens
                     images.append(img_array)
                     labels.append(label)
                 except (IOError, OSError) as e:
-                    print(f"Error loading {img_file}: {e}")
+                    print(f"Warning: Failed to load image {img_file}: {e}")
                     continue
     
     # Convert to tensors
@@ -90,26 +90,6 @@ def load_images_from_folder(folder_path: Path) -> Tuple[torch.Tensor, torch.Tens
     labels_tensor = torch.from_numpy(np.array(labels, dtype=np.int64))
     
     return images_tensor, labels_tensor
-
-
-def standardize_images(images: torch.Tensor) -> torch.Tensor:
-    """Standardize images to have zero mean and unit variance.
-    
-    Args:
-        images: Input images tensor
-        
-    Returns:
-        Standardized images tensor
-    """
-    mean = images.mean()
-    std = images.std()
-    
-    # Avoid division by zero
-    if std < 1e-8:
-        std = 1.0
-    
-    standardized = (images - mean) / std
-    return standardized
 
 
 def process_data(raw_path: str, processed_path: str, val_split: float = 0.15):
