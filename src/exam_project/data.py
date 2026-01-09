@@ -11,7 +11,11 @@ import numpy as np
 
 
 class MyDataset(Dataset):
-    """Dataset class for loading processed data."""
+    """Dataset class for loading processed data.
+    
+    Note: This is a minimal implementation to satisfy existing tests.
+    In practice, you would load the processed .pt files here.
+    """
     
     def __init__(self, data_path: str):
         """Initialize dataset.
@@ -64,17 +68,19 @@ def load_images_from_folder(folder_path: Path) -> Tuple[torch.Tensor, torch.Tens
             continue
             
         # Load all images from this emotion folder
-        for img_file in emotion_path.glob('*.jpg'):
-            try:
-                # Load image and convert to grayscale if needed
-                img = Image.open(img_file).convert('L')
-                # Convert to numpy array and normalize to [0, 1]
-                img_array = np.array(img, dtype=np.float32) / 255.0
-                images.append(img_array)
-                labels.append(label)
-            except Exception as e:
-                print(f"Error loading {img_file}: {e}")
-                continue
+        # Support multiple image formats
+        for pattern in ['*.jpg', '*.jpeg', '*.png', '*.bmp']:
+            for img_file in emotion_path.glob(pattern):
+                try:
+                    # Load image and convert to grayscale if needed
+                    img = Image.open(img_file).convert('L')
+                    # Convert to numpy array and normalize to [0, 1]
+                    img_array = np.array(img, dtype=np.float32) / 255.0
+                    images.append(img_array)
+                    labels.append(label)
+                except (IOError, OSError) as e:
+                    print(f"Error loading {img_file}: {e}")
+                    continue
     
     # Convert to tensors
     if len(images) == 0:
