@@ -103,8 +103,21 @@ def save_image_labels(images, labels, processed_dir, traintest):
 def save_metadata(metadata, processed_dir):
     torch.save(metadata, os.path.join(processed_dir,'class_to_idx.pt'))
 
+def get_split_index(N, frac=0.8):
+    split = int(frac * N)  # 80%
+    indices = torch.randperm(N)  # shuffled indices
+    train_idx = indices[:split]
+    val_idx   = indices[split:]
+    return train_idx, val_idx
+
 def save_data(train_dataset, test_dataset, processed_dir):
-    save_image_labels(*get_image_labels_tensors(train_dataset), processed_dir, 'train')
+    #Split full training set into training and validation set
+    train_images_all, train_labels_all = get_image_labels_tensors(train_dataset)
+    train_idx, val_idx = get_split_index(train_images_all.size(0), 0.8)
+    #Save training and validation sets
+    save_image_labels(train_images_all[train_idx], train_labels_all[train_idx], processed_dir, 'train')
+    save_image_labels(train_images_all[val_idx], train_labels_all[val_idx], processed_dir, 'val')
+    #Save test set
     save_image_labels(*get_image_labels_tensors(test_dataset), processed_dir, 'test')
 
 def preprocess_data(raw_dir, processed_dir):
@@ -129,12 +142,15 @@ def load_data(processed_dir) -> tuple[torch.utils.data.Dataset, torch.utils.data
     """Return train and test datasets for corrupt MNIST."""
     train_images = torch.load(os.path.join(processed_dir,"train_images.pt"))
     train_target = torch.load(os.path.join(processed_dir,"train_target.pt"))
+    val_images = torch.load(os.path.join(processed_dir,"val_images.pt"))
+    val_target = torch.load(os.path.join(processed_dir,"val_target.pt"))
     test_images = torch.load(os.path.join(processed_dir,"test_images.pt"))
     test_target = torch.load(os.path.join(processed_dir,"test_target.pt"))
 
     train_set = torch.utils.data.TensorDataset(train_images, train_target)
+    val_set = torch.utils.data.TensorDataset(val_images, val_target)
     test_set = torch.utils.data.TensorDataset(test_images, test_target)
-    return train_set, test_set
+    return train_set, val_set, test_set
 
 if __name__ == "__main__":
 
@@ -149,4 +165,4 @@ if __name__ == "__main__":
     preprocess_data(raw_dir, processed_dir)
 
     #Load datsets from data/processed
-    train_set, test_set = load_data(processed_dir)
+    train_set, val_set, test_set = load_data(processed_dir)
