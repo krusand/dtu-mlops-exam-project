@@ -66,7 +66,7 @@ def train():
     train, val, test = load_data()
     model = Model()
     trainer = get_trainer(model, trainer_args=trainer_args)
-    trainer.fit(model=model)
+    trainer.fit(model=model, train_dataloaders=train, val_dataloaders=val)
     torch.save(model.state_dict(), "models/checkpoint.pth")
 
 
