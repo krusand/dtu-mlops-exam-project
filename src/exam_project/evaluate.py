@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from sklearn.metrics import accuracy_score, f1_score, confusion_matrix
 import torch
 from torch.utils.data import DataLoader
 
@@ -53,21 +54,29 @@ def evaluate_model(model_file_name: str,
     _, _, test = load_data(processed_dir=test_data_path)
 
     # dataloader
-    test_loader = DataLoader(test, persistent_workers=True, num_workers=9)
+    test_loader = DataLoader(test, persistent_workers=True, num_workers=9)   # batch_size is by default 1
 
-    # computing the test accuracy
-    test_correct = 0
+    # making predictions on the test set one image at a time
+    y_pred = []
+    y_true = []
     model.eval()
     with torch.no_grad():
         for data, target in test_loader:
             data, target = data.to(device), target.to(device)
+            y_true.append(target.item())
             output = model(data)
-
             predicted = output.argmax(dim=1)
-            test_correct += (target==predicted).sum().cpu().item()
+            y_pred.append(predicted.item())
 
-    test_acc = test_correct/len(test_loader.dataset)
-    eval_dict = {"Test accuracy": test_acc}
+    test_acc = accuracy_score(y_true, y_pred)
+    macro_f1 = f1_score(y_true, y_pred, average="macro")
+    weighted_f1 = f1_score(y_true, y_pred, average="weighted")
+    conf_matrix = confusion_matrix(y_true, y_pred)
+    eval_dict = {"Test accuracy": test_acc,
+                 "Macro F1": macro_f1,
+                 "Weighted F1": weighted_f1,
+                 "Confusion matrix": conf_matrix,
+                 }
     
     return eval_dict
 
