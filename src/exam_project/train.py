@@ -42,7 +42,7 @@ def get_trainer(model, trainer_args):
 def train(
         max_epochs: Annotated[int, typer.Option("--max-epochs", "-max_e")] = 1,
         lr: Annotated[float, typer.Option("--learning-rate", "-lr")] = 1e-3,
-        batch_size: Annotated[float, typer.Option("--batch-size", "-bs")] = 128
+        batch_size: Annotated[int, typer.Option("--batch-size", "-bs")] = 128
     ):
     """
     Trains the model
