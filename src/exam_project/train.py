@@ -46,6 +46,11 @@ def train(
     ):
     """
     Trains the model
+
+    params:
+        max_epochs (int): The number of epochs the models runs for
+        lr (float): Learning rate of gradient descent method
+        batch_size: The number of images in a batch
     """
     trainer_args = {"max_epochs": max_epochs,'limit_train_batches': 0.05, 'accelerator': DEVICE}
     train, val, test = load_data(processed_dir='data/processed/')
