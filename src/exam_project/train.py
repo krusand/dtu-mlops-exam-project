@@ -1,23 +1,16 @@
-from exam_project.model import BaseCNN, BaseANN
+from exam_project.model import BaseCNN
 from exam_project.data import load_data
 
-from pytorch_lightning import LightningModule, Trainer
+from pytorch_lightning import Trainer
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.callbacks import ModelCheckpoint
-from torch import nn, optim
 import torch
 import transformers
-import torchvision
-import PIL
 import typer
 from typing import Annotated
-from PIL import Image
-from torchvision import transforms
-from torchvision.datasets import DatasetFolder
-import wandb
 from dotenv import load_dotenv
-load_dotenv()
 import os
+load_dotenv()
 api_key = os.getenv("WANDB_API_KEY")
 entity = os.getenv("WANDB_ENTITY")
 project = os.getenv("WANDB_PROJECT")

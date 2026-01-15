@@ -5,10 +5,9 @@ import torch
 from torch.utils.data import DataLoader
 
 from exam_project.data import load_data
-from exam_project.model import BaseANN, BaseCNN
+from exam_project.model import BaseANN
 
 import typer
-from typing import Annotated
 
 ROOT = Path(__file__).resolve().parents[2]    # go two levels up to project root
 DEVICE = 'cuda' if torch.cuda.is_available() else 'mps' if torch.mps.is_available() else 'cpu'
