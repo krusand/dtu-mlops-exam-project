@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from pytorch_lightning import LightningModule
+from transformers import ViTForImageClassification, ViTImageProcessor
 
 class BaseCNN(LightningModule):
     """Our custom CNN to classify facial expressions."""
@@ -110,6 +111,74 @@ class BaseANN(LightningModule):
 
     def configure_optimizers(self):
         return torch.optim.Adam(self.parameters(), lr=self.lr)
+
+
+class ViTClassifier(LightningModule):
+    """Vision Transformer (ViT) for image classification using Hugging Face."""
+
+    def __init__(
+        self,
+        num_classes: int = 7,
+        model_name: str = "google/vit-base-patch16-224-in21k",
+        learning_rate: float = 1e-4,
+        freeze_backbone: bool = False,
+    ) -> None:
+        super().__init__()
+        self.save_hyperparameters()
+        self.learning_rate = learning_rate
+
+        # Load pretrained ViT model with custom number of classes
+        self.vit = ViTForImageClassification.from_pretrained(
+            model_name,
+            num_labels=num_classes,
+            ignore_mismatched_sizes=True,
+        )
+
+        # Load image processor for preprocessing
+        self.processor = ViTImageProcessor.from_pretrained(model_name)
+
+        # Optionally freeze the backbone (only train classifier head)
+        if freeze_backbone:
+            for param in self.vit.vit.parameters():
+                param.requires_grad = False
+
+        self.loss_fn = nn.CrossEntropyLoss()
+
+    def preprocess(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Preprocess images for ViT.
+        Converts grayscale [B, 1, H, W] to RGB [B, 3, 224, 224].
+        ViT model expects RGB images of size 224x224.
+        """
+        # Convert grayscale to RGB by repeating channels
+        if x.shape[1] == 1:
+            x = x.repeat(1, 3, 1, 1)
+
+        # Resize to ViT expected size (224x224)
+        x = F.interpolate(x, size=(224, 224), mode="bilinear", align_corners=False)
+
+        # Normalize using ViT's expected normalization
+        mean = torch.tensor(self.processor.image_mean, device=x.device).view(1, 3, 1, 1)
+        std = torch.tensor(self.processor.image_std, device=x.device).view(1, 3, 1, 1)
+        x = (x - mean) / std
+
+        return x
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x = self.preprocess(x)
+        outputs = self.vit(pixel_values=x)
+        return outputs.logits
+
+    def training_step(self, batch):
+        img, target = batch
+        logits = self(img)
+        loss = self.loss_fn(logits, target)
+        self.log("train_loss", loss, prog_bar=True)
+        return loss
+
+    def configure_optimizers(self):
+        return torch.optim.AdamW(self.parameters(), lr=self.learning_rate)
+
     
 if __name__ == "__main__":
     model = BaseCNN(img_size=48, output_dim=7)
@@ -135,3 +204,9 @@ if __name__ == "__main__":
     y = torch.randint(0, 7, (2,), dtype=torch.long)
     loss = ann.training_step((x, y))
     print(f"Loss: {loss.item():.4f}")
+
+    vit_model = ViTClassifier(num_classes=7, freeze_backbone=True)
+    x = torch.rand(2, 1, 48, 48)  # Grayscale 48x48 images
+    output = vit_model(x)
+    print(f"Output shape of ViT model: {output.shape}")  # [2, 7]
+    print(f"Output (probabilities): {F.softmax(output, dim=1)}")
