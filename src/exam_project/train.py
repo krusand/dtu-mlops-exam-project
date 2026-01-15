@@ -1,6 +1,8 @@
 from exam_project.model import BaseCNN
 from exam_project.data import load_data
 
+import hydra
+from hydra.utils import instantiate
 from pytorch_lightning import Trainer
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.callbacks import ModelCheckpoint
@@ -16,20 +18,17 @@ project = os.getenv("WANDB_PROJECT")
 
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-
-def train(
-        max_epochs: Annotated[int, typer.Option("--max-epochs", "-max_e")] = 1,
-        lr: Annotated[float, typer.Option("--learning-rate", "-lr")] = 1e-3,
-        batch_size: Annotated[int, typer.Option("--batch-size", "-bs")] = 128
-    ):
+@hydra.main(config_path="../../configs", config_name="train", version_base=None)
+def train(cfg):
     """
     Trains the model
 
-    params:
-        max_epochs (int): The number of epochs the models runs for
-        lr (float): Learning rate of gradient descent method
-        batch_size: The number of images in a batch
+    params: 
+        cfg: config.yaml using Hydra
     """
+    print(cfg)
+
+    exit()
     wandb_logger = WandbLogger(log_model="all", project=project)
     checkpoint_callback = ModelCheckpoint(
         monitor='validation_loss',
@@ -55,4 +54,4 @@ def train(
     print(checkpoint_callback.best_model_path)
 
 if __name__ == "__main__":
-    pass
+    train()

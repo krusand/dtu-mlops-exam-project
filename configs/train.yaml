@@ -1,2 +1,5 @@
 defaults:
   - models: ann 
+  - paths: default
+  - logger: wandb
+  - hydra: default
