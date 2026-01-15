@@ -181,3 +181,4 @@ cython_debug/
 data/
 models/*
 lightning_logs/
+/data
