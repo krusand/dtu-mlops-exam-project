@@ -6,7 +6,7 @@ from transformers import ViTForImageClassification, ViTImageProcessor
 
 class BaseCNN(LightningModule):
     """Our custom CNN to classify facial expressions."""
-    def __init__(self, img_size: int, output_dim: int, lr: float = 1e-3):
+    def __init__(self, img_size: int = 48, output_dim: int = 7, lr: float = 1e-3):
         super(BaseCNN, self).__init__()
 
         self.img_size = img_size
@@ -37,6 +37,8 @@ class BaseCNN(LightningModule):
 
         # Learning rate
         self.lr = lr
+
+        self.save_hyperparameters()
 
     def forward(self, x):
         x = self.pool(F.relu(self.bn1(self.conv1(x))))
@@ -91,6 +93,8 @@ class BaseANN(LightningModule):
 
         self.lr = lr
 
+        self.save_hyperparameters()
+
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # x: [B, 1, 48, 48] -> [B, 2304]
@@ -107,7 +111,21 @@ class BaseANN(LightningModule):
         """
         img, target = batch
         y_pred = self(img)  
-        return self.loss_fn(y_pred, target)
+        loss = self.loss_fn(y_pred, target)
+        self.log("validation_loss", loss)
+        return loss
+    
+    def validation_step(self, batch):
+        """
+        Expects batch to be (images, targets)
+        - images: [B, 1, 48, 48]
+        - targets: [B] with class indices 0..6
+        """
+        img, target = batch
+        y_pred = self(img)  
+        loss = self.loss_fn(y_pred, target)
+        self.log("validation_loss", loss)
+        return loss
 
     def configure_optimizers(self):
         return torch.optim.Adam(self.parameters(), lr=self.lr)
