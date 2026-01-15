@@ -1,26 +1,14 @@
-import kagglehub
 import os
-import PIL
-import torch
-
 from pathlib import Path
-
-from PIL import Image
-
-from torchvision import transforms
-from torchvision.datasets import DatasetFolder
-
 from typing import Callable, Dict, Literal
 
-#Kaggle hyperparameters
-kaggle_id = 'msambare/fer2013'
-data_version_path = '1'
-#Preprocessing hyperparameters 
-root = 'data'
-raw_str = 'raw'
-processed_str = 'processed'
-trainvalsplit = 0.8
-seed = 42
+import hydra
+import kagglehub
+import PIL
+from PIL import Image
+import torch
+from torchvision import transforms
+from torchvision.datasets import DatasetFolder
 
 #Define type hints
 Transform = Callable[[Image.Image], torch.Tensor]
@@ -85,7 +73,7 @@ def save_metadata(metadata:Dict[str,int], processed_dir:str)->None:
     torch.save(metadata, os.path.join(processed_dir,'class_to_idx.pt'))
 
 
-def get_split_index(N:int, frac:float=0.8)->tuple[torch.Tensor, torch.Tensor]:
+def get_split_index(N:int, frac:float, seed:int) -> tuple[torch.Tensor, torch.Tensor]:
     """Get indices for splitting torch tensor using random shuffle"""
     split = int(frac * N)
     g = torch.Generator().manual_seed(seed)
@@ -97,11 +85,11 @@ def get_split_index(N:int, frac:float=0.8)->tuple[torch.Tensor, torch.Tensor]:
 
 
 def save_data(train_dataset:torch.utils.data.Dataset, test_dataset:torch.utils.data.Dataset, 
-              processed_dir:str, trainvalsplit:float)->None:
+              processed_dir:str, trainvalsplit:float, seed:int)->None:
     """Save images and labels tensors for train, val and test, and metadata"""
     #Split full training set into training and validation set
     train_images_all, train_labels_all = get_image_labels_tensors(train_dataset)
-    train_idx, val_idx = get_split_index(train_images_all.size(0), frac=trainvalsplit)
+    train_idx, val_idx = get_split_index(train_images_all.size(0), frac=trainvalsplit, seed=seed)
     #Save training and validation sets
     save_image_labels(train_images_all[train_idx], train_labels_all[train_idx], processed_dir, 'train')
     save_image_labels(train_images_all[val_idx], train_labels_all[val_idx], processed_dir, 'val')
@@ -109,7 +97,7 @@ def save_data(train_dataset:torch.utils.data.Dataset, test_dataset:torch.utils.d
     save_image_labels(*get_image_labels_tensors(test_dataset), processed_dir, 'test')
 
 
-def preprocess_data(raw_dir:str, processed_dir:str, trainvalsplit:float)->None:
+def preprocess_data(raw_dir:str, processed_dir:str, trainvalsplit:float, seed:int)->None:
     """Load data from data/raw/ and save .pt files in data/preprocessed"""
     #Get transform and load data/raw/
     transform = get_transform()
@@ -118,7 +106,7 @@ def preprocess_data(raw_dir:str, processed_dir:str, trainvalsplit:float)->None:
 
     #Save datasets in data/processed
     print ('Converting datasets .pt files...')
-    save_data(train_dataset, test_dataset, processed_dir, trainvalsplit)
+    save_data(train_dataset, test_dataset, processed_dir, trainvalsplit, seed)
     save_metadata(train_dataset.class_to_idx, processed_dir)
     print ('Done.')
 
@@ -142,17 +130,18 @@ def load_data(processed_dir:str) -> tuple[torch.utils.data.Dataset, torch.utils.
     test_set = torch.utils.data.TensorDataset(test_images, test_target)
     return train_set, val_set, test_set
 
-if __name__ == "__main__":
+@hydra.main(config_name="config.yaml")
+def main(cfg):
     #Set KAGGLEHUB_CACHE environment variable
-    os.environ["KAGGLEHUB_CACHE"] = os.path.join(root, raw_str)
+    os.environ["KAGGLEHUB_CACHE"] = os.path.join(cfg.paths.data_root, cfg.paths.raw_str)
 
     #Download latest version of data from kaggle
-    path = kagglehub.dataset_download(kaggle_id)
+    path = kagglehub.dataset_download(cfg.paths.kaggle_id)
     print("Path to dataset files:", path)
 
     #Define directories
-    raw_dir = os.path.join(root, f'{raw_str}/datasets/{kaggle_id}/versions/{data_version_path}/')
-    processed_dir = os.path.join(root, processed_str)
+    raw_dir = os.path.join(cfg.paths.data_root, f'{cfg.paths.raw_str}/datasets/{cfg.paths.kaggle_id}/versions/{cfg.paths.data_version_path}/')
+    processed_dir = os.path.join(cfg.paths.data_root, cfg.paths.processed_str)
 
     #Create processed dir if it doesn't already exist
     create_processed_dir(processed_dir)
@@ -162,7 +151,10 @@ if __name__ == "__main__":
     assert(os.path.exists(processed_dir))
 
     #Load datasets from data/raw and save .pt images and labels in data/preprocessed    
-    preprocess_data(raw_dir, processed_dir, trainvalsplit)
+    preprocess_data(raw_dir, processed_dir, cfg.hyperparameters.trainvalsplit, seed=cfg.hyperparameters.seed)
 
     #Load datsets from data/processed
     train_set, val_set, test_set = load_data(processed_dir)
+
+if __name__ == "__main__":
+    main()
