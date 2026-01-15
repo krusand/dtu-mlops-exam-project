@@ -130,7 +130,7 @@ def load_data(processed_dir:str) -> tuple[torch.utils.data.Dataset, torch.utils.
     test_set = torch.utils.data.TensorDataset(test_images, test_target)
     return train_set, val_set, test_set
 
-@hydra.main(config_name="config.yaml")
+@hydra.main(config_path="../../configs/", config_name="data", version_base=None)
 def main(cfg):
     #Set KAGGLEHUB_CACHE environment variable
     os.environ["KAGGLEHUB_CACHE"] = os.path.join(cfg.paths.data_root, cfg.paths.raw_str)

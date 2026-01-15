@@ -1,0 +1,6 @@
+_target_: model.ViTClassifier
+model_name: "google/vit-base-patch16-224-in21k"
+lr: 1e-4
+freeze_backbone: True
+output_dim: 7
+img_size: 48
