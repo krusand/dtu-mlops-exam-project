@@ -6,7 +6,7 @@ from transformers import ViTForImageClassification, ViTImageProcessor
 
 class BaseCNN(LightningModule):
     """Our custom CNN to classify facial expressions."""
-    def __init__(self, img_size: int, output_dim: int):
+    def __init__(self, img_size: int, output_dim: int, lr: float = 1e-3):
         super(BaseCNN, self).__init__()
 
         self.img_size = img_size
@@ -35,6 +35,9 @@ class BaseCNN(LightningModule):
         # Loss function
         self.loss_fn = nn.NLLLoss()
 
+        # Learning rate
+        self.lr = lr
+
     def forward(self, x):
         x = self.pool(F.relu(self.bn1(self.conv1(x))))
         x = self.pool(F.relu(self.bn2(self.conv2(x))))
@@ -52,7 +55,7 @@ class BaseCNN(LightningModule):
         return self.loss_fn(y_pred, target)
     
     def configure_optimizers(self):
-        return torch.optim.Adam(self.parameters(), lr=1e-3)
+        return torch.optim.Adam(self.parameters(), lr=self.lr)
 
 
 class BaseANN(LightningModule):
@@ -63,6 +66,7 @@ class BaseANN(LightningModule):
         num_classes: int = 7,
         hidden: tuple[int, ...] = (512, 256),
         dropout: float = 0.3,
+        lr: float = 1e-3
     ) -> None:
         super().__init__()
         input_dim = 48 * 48 
@@ -85,6 +89,9 @@ class BaseANN(LightningModule):
 
         self.loss_fn = nn.NLLLoss()
 
+        self.lr = lr
+
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # x: [B, 1, 48, 48] -> [B, 2304]
         x = x.reshape(x.size(0), -1)
@@ -103,7 +110,7 @@ class BaseANN(LightningModule):
         return self.loss_fn(y_pred, target)
 
     def configure_optimizers(self):
-        return torch.optim.Adam(self.parameters(), lr=1e-3)
+        return torch.optim.Adam(self.parameters(), lr=self.lr)
 
 
 class ViTClassifier(LightningModule):
