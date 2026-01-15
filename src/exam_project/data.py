@@ -140,8 +140,8 @@ def main(cfg):
     print("Path to dataset files:", path)
 
     #Define directories
-    raw_dir = os.path.join(root, f'{cfg.paths.raw_str}/datasets/{cfg.paths.kaggle_id}/versions/{cfg.paths.data_version_path}/')
-    processed_dir = os.path.join(root, processed_str)
+    raw_dir = os.path.join(cfg.paths.data_root, f'{cfg.paths.raw_str}/datasets/{cfg.paths.kaggle_id}/versions/{cfg.paths.data_version_path}/')
+    processed_dir = os.path.join(cfg.paths.data_root, cfg.paths.processed_str)
 
     #Create processed dir if it doesn't already exist
     create_processed_dir(processed_dir)
