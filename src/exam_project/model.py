@@ -172,12 +172,12 @@ class ViTClassifier(LightningModule):
         self,
         num_classes: int = 7,
         model_name: str = "google/vit-base-patch16-224-in21k",
-        learning_rate: float = 1e-4,
+        lr: float = 1e-4,
         freeze_backbone: bool = False,
     ) -> None:
         super().__init__()
         self.save_hyperparameters()
-        self.learning_rate = learning_rate
+        self.lr = lr
 
         # Load pretrained ViT model with custom number of classes
         self.vit = ViTForImageClassification.from_pretrained(
@@ -229,7 +229,7 @@ class ViTClassifier(LightningModule):
         return loss
 
     def configure_optimizers(self):
-        return torch.optim.AdamW(self.parameters(), lr=self.learning_rate)
+        return torch.optim.AdamW(self.parameters(), lr=self.lr)
 
     
 if __name__ == "__main__":

@@ -16,8 +16,8 @@ def set_global_seed(seed: int = 42) -> None:
 
 MODELS = [
     ("BaseCNN", BaseCNN(img_size=48, output_dim=7, lr=1e-3)),
-    ("BaseANN", BaseANN(num_classes=7, hidden=(512, 256), dropout=0.3, lr=1e-3)),
-    ("ViTClassifier", ViTClassifier(num_classes=7, learning_rate=1e-4)),
+    ("BaseANN", BaseANN(output_dim=7, hidden=(512, 256), dropout=0.3, lr=1e-3)),
+    ("ViTClassifier", ViTClassifier(output_dim=7, lr=1e-4)),
 ]
 
 
@@ -81,17 +81,17 @@ class TestModels:
         if model_name == "BaseCNN":
             m1 = BaseCNN(img_size=48, output_dim=7, lr=1e-3)
         elif model_name == "BaseANN":
-            m1 = BaseANN(num_classes=7, hidden=(512, 256), dropout=0.3, lr=1e-3)
+            m1 = BaseANN(output_dim=7, hidden=(512, 256), dropout=0.3, lr=1e-3)
         else:
-            m1 = ViTClassifier(num_classes=7, learning_rate=1e-4)
+            m1 = ViTClassifier(output_dim=7, lr=1e-4)
 
         set_global_seed(42)
         if model_name == "BaseCNN":
             m2 = BaseCNN(img_size=48, output_dim=7, lr=1e-3)
         elif model_name == "BaseANN":
-            m2 = BaseANN(num_classes=7, hidden=(512, 256), dropout=0.3, lr=1e-3)
+            m2 = BaseANN(output_dim=7, hidden=(512, 256), dropout=0.3, lr=1e-3)
         else:
-            m2 = ViTClassifier(num_classes=7, learning_rate=1e-4)
+            m2 = ViTClassifier(output_dim=7, lr=1e-4)
 
         try:
             m1.eval()
@@ -133,8 +133,8 @@ class TestModelComparison:
         """Test all models produce same output shape."""
         models = [
             ("BaseCNN", BaseCNN(img_size=48, output_dim=7)),
-            ("BaseANN", BaseANN(num_classes=7)),
-            ("ViTClassifier", ViTClassifier(num_classes=7)),
+            ("BaseANN", BaseANN(output_dim=7)),
+            ("ViTClassifier", ViTClassifier(output_dim=7)),
         ]
         x = torch.randn(2, 1, 48, 48)
 
