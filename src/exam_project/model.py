@@ -93,7 +93,7 @@ class BaseANN(LightningModule):
 
     def __init__(
         self,
-        num_classes: int = 7,
+        output_dim: int = 7,
         hidden: tuple[int, ...] = (512, 256),
         dropout: float = 0.3,
         lr: float = 1e-3
@@ -114,7 +114,7 @@ class BaseANN(LightningModule):
             )
             prev = h
 
-        layers.append(nn.Linear(prev, num_classes)) 
+        layers.append(nn.Linear(prev, output_dim)) 
         self.net = nn.Sequential(*layers)
 
         self.loss_fn = nn.NLLLoss()
@@ -170,7 +170,7 @@ class ViTClassifier(LightningModule):
 
     def __init__(
         self,
-        num_classes: int = 7,
+        output_dim: int = 7,
         model_name: str = "google/vit-base-patch16-224-in21k",
         lr: float = 1e-4,
         freeze_backbone: bool = False,
@@ -182,7 +182,7 @@ class ViTClassifier(LightningModule):
         # Load pretrained ViT model with custom number of classes
         self.vit = ViTForImageClassification.from_pretrained(
             model_name,
-            num_labels=num_classes,
+            num_labels=output_dim,
             ignore_mismatched_sizes=True,
         )
 
@@ -243,7 +243,7 @@ if __name__ == "__main__":
 
 
 
-    ann = BaseANN(num_classes=7, hidden=(512, 256), dropout=0.3)
+    ann = BaseANN(output_dim=7, hidden=(512, 256), dropout=0.3)
 
     # Create a random input tensor: (batch=2, channels=1, H=48, W=48)
     x = torch.rand(2, 1, 48, 48)
@@ -257,7 +257,7 @@ if __name__ == "__main__":
     loss = ann.training_step((x, y))
     print(f"Loss: {loss.item():.4f}")
 
-    vit_model = ViTClassifier(num_classes=7, freeze_backbone=True)
+    vit_model = ViTClassifier(output_dim=7, freeze_backbone=True)
     x = torch.rand(2, 1, 48, 48)  # Grayscale 48x48 images
     output = vit_model(x)
     print(f"Output shape of ViT model: {output.shape}")  # [2, 7]
