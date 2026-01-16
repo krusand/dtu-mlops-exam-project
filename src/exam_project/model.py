@@ -6,6 +6,8 @@ import torch.nn.functional as F
 from pytorch_lightning import LightningModule
 from transformers import ViTForImageClassification, ViTImageProcessor
 from sklearn.metrics import accuracy_score
+
+
 class BaseCNN(LightningModule):
     """Our custom CNN to classify facial expressions."""
     def __init__(self, 
@@ -177,7 +179,7 @@ class ViTClassifier(LightningModule):
         self,
         output_dim: int = 7,
         model_name: str = "google/vit-base-patch16-224-in21k",
-        learning_rate: float = 1e-4,
+        lr: float = 1e-4,
         freeze_backbone: bool = False,
     ) -> None:
         super().__init__()
@@ -239,7 +241,7 @@ class ViTClassifier(LightningModule):
         return torch.optim.AdamW(self.parameters(), lr=self.lr)
 
 
-@hydra.main(config_path="../../configs", config_name="train", version_base=None)
+@hydra.main(config_path="configs", config_name="train", version_base=None)
 def main(cfg):
     # Create a random input tensor with shape (batch=1, channels=1, H=img_size, W=img_size)
     x = torch.rand(2, 1, cfg.models.img_size, cfg.models.img_size)
