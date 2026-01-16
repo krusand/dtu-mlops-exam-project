@@ -187,7 +187,7 @@ lightning_logs/
 wandb/
 MLOps-exam/
 artifacts/
-
+/multirun
 
 # Hydra outputs
 outputs/

@@ -1,4 +1,3 @@
-from exam_project.model import BaseCNN
 from exam_project.data import load_data
 
 import hydra
@@ -7,8 +6,6 @@ from pytorch_lightning import Trainer
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.callbacks import ModelCheckpoint
 import torch
-import transformers
-from typing import Annotated
 import wandb
 from omegaconf import OmegaConf
 
@@ -24,7 +21,7 @@ def train(cfg):
     cfg_omega = OmegaConf.to_container(cfg)
 
 
-    wandb.init(
+    run = wandb.init(
         project=cfg.logger.wandb.project,
         entity=cfg.logger.wandb.entity,
         job_type=cfg.logger.wandb.job_type,
@@ -74,6 +71,7 @@ def train(cfg):
         target_path="krusand-danmarks-tekniske-universitet-dtu-org/wandb-registry-fer-model/Model new",
         aliases=["latest"]
     )
+    run.finish()
 
 if __name__ == "__main__":
     train()
