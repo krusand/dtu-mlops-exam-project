@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from pytorch_lightning import LightningModule
 from transformers import ViTForImageClassification, ViTImageProcessor
-from sklearn.metrics import accuracy_score, RocCurveDisplay
+from sklearn.metrics import accuracy_score
 
 
 class BaseCNN(LightningModule):
