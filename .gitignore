@@ -178,7 +178,7 @@ cython_debug/
 #.idea/
 
 # Data
-data/
+./data/
 models/*
 lightning_logs/
 /data

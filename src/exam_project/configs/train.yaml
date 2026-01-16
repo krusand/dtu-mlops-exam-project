@@ -3,3 +3,4 @@ defaults:
   - paths: default
   - logger: wandb
   - trainer: default
+  - data: default
