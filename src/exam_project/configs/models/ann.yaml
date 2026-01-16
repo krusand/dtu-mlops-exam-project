@@ -1,4 +1,4 @@
-_target_: model.BaseANN
+_target_: exam_project.model.BaseANN
 img_size: 48
 output_dim: 7
 hidden: [512, 256]

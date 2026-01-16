@@ -1,4 +1,4 @@
-_target_: model.BaseCNN
+_target_: exam_project.model.BaseCNN
 img_size: 48
 output_dim: 7
 lr: 1e-3

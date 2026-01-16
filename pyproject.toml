@@ -73,4 +73,5 @@ omit = ["tests/*"]
 [project.scripts]
 train = "exam_project.train:train"
 evaluate = "exam_project.evaluate:evaluate"
+test = "exam_project.test:test"
 

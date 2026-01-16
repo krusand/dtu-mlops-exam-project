@@ -1,4 +1,4 @@
-_target_: model.ViTClassifier
+_target_: exam_project.model.ViTClassifier
 model_name: "google/vit-base-patch16-224-in21k"
 lr: 1e-4
 freeze_backbone: True
