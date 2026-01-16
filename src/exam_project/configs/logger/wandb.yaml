@@ -10,4 +10,4 @@ wandb:
   entity: "krusand-danmarks-tekniske-universitet-dtu"
   group: ""
   tags: []
-  job_type: ""
+  job_type: "train"

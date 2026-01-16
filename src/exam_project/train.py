@@ -9,7 +9,7 @@ from pytorch_lightning.callbacks import ModelCheckpoint
 import torch
 import transformers
 from typing import Annotated
-
+import wandb
 
 @hydra.main(config_path="configs", config_name="train", version_base=None)
 def train(cfg):
@@ -17,8 +17,15 @@ def train(cfg):
     Trains the model
 
     params: 
-        cfg: config.yaml using Hydra
+        cfg: .yaml using Hydra
     """
+
+    wandb.init(
+        project=cfg.logger.wandb.project,
+        entity=cfg.logger.wandb.entity,
+        job_type=cfg.logger.wandb.job_type,
+        config=cfg.models
+    )
 
     checkpoint_callback = ModelCheckpoint(
         monitor='validation_loss',
