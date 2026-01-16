@@ -1,79 +1,77 @@
-from exam_project.model import BaseCNN
 from exam_project.data import load_data
 
+import hydra
+from hydra.utils import instantiate
 from pytorch_lightning import Trainer
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.callbacks import ModelCheckpoint
 import torch
-import transformers
-import typer
-from typing import Annotated
-from dotenv import load_dotenv
-import os
-load_dotenv()
-api_key = os.getenv("WANDB_API_KEY")
-entity = os.getenv("WANDB_ENTITY")
-project = os.getenv("WANDB_PROJECT")
+import wandb
+from omegaconf import OmegaConf
 
-
-DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
-
-app = typer.Typer()
-
-def get_trainer(model, trainer_args):
-    """
-    Gets a Trainer object of either transformers or pytorch lightning
-
-    params:
-        model: The model class
-        trainer_args: Training arguments
-    """
-    return Trainer(**trainer_args)
-
-    # IMPLEMENT WHEN WE GET HUGGINGFACE MODELS
-    if model == "lightning":
-        trainer = Trainer(**trainer_args)
-    elif model == "huggingface":
-        trainer = transformers.Trainer(**trainer_args)
-
-    return trainer
-
-@app.command()
-def train(
-        max_epochs: Annotated[int, typer.Option("--max-epochs", "-max_e")] = 1,
-        lr: Annotated[float, typer.Option("--learning-rate", "-lr")] = 1e-3,
-        batch_size: Annotated[int, typer.Option("--batch-size", "-bs")] = 128
-    ):
+@hydra.main(config_path="configs", config_name="train", version_base=None)
+def train(cfg):
     """
     Trains the model
 
-    params:
-        max_epochs (int): The number of epochs the models runs for
-        lr (float): Learning rate of gradient descent method
-        batch_size: The number of images in a batch
+    params: 
+        cfg: .yaml using Hydra
     """
-    wandb_logger = WandbLogger(log_model="all", project=project)
+
+    cfg_omega = OmegaConf.to_container(cfg)
+
+
+    run = wandb.init(
+        project=cfg.logger.wandb.project,
+        entity=cfg.logger.wandb.entity,
+        job_type=cfg.logger.wandb.job_type,
+        config=cfg_omega
+    )
+
     checkpoint_callback = ModelCheckpoint(
         monitor='validation_loss',
         dirpath='models/',
         filename='emotion-model-{epoch:02d}-{validation_loss:.2f}'
     )
 
-    trainer_args = {"max_epochs": max_epochs
-                    ,'limit_train_batches': 0.05
-                    , 'accelerator': DEVICE
-                    , 'logger': wandb_logger
-                    , 'log_every_n_steps': 5
+    trainer_args = {"max_epochs": cfg.trainer.max_epochs
+                    , 'accelerator': cfg.trainer.accelerator
+                    , 'logger': WandbLogger(log_model=cfg.logger.wandb.log_model, project=cfg.logger.wandb.project)
+                    , 'log_every_n_steps': cfg.trainer.log_every_n_steps
                     , "callbacks": [checkpoint_callback]}
     
     train, val, test = load_data(processed_dir='data/processed/')
-    train = torch.utils.data.DataLoader(train, persistent_workers=True, num_workers=9, batch_size=batch_size)
-    val = torch.utils.data.DataLoader(val, persistent_workers=True, num_workers=9, batch_size=batch_size)
-    test = torch.utils.data.DataLoader(test, persistent_workers=True, num_workers=9, batch_size=batch_size)
+    train = torch.utils.data.DataLoader(train, persistent_workers=True, num_workers=9, batch_size=cfg.data.batch_size)
+    val = torch.utils.data.DataLoader(val, persistent_workers=True, num_workers=9, batch_size=cfg.data.batch_size)
+    test = torch.utils.data.DataLoader(test, persistent_workers=True, num_workers=9, batch_size=cfg.data.batch_size)
     
-    model = BaseCNN(lr=lr)
-    trainer = get_trainer(model, trainer_args=trainer_args)
+    model = instantiate(cfg.models)
+    trainer = Trainer(**trainer_args)
     trainer.fit(model=model, train_dataloaders=train, val_dataloaders=val)
-    print(checkpoint_callback.best_model_path)
+
+    # Save and log the best model to model registry
+    best_model_path = checkpoint_callback.best_model_path
+    
+    # Create an artifact
+    artifact = wandb.Artifact(
+        name=f"emotion-model-{cfg.models._target_}",
+        type="model",
+        description="Emotion recognition model"
+    )
+    
+    # Add the model file to the artifact
+    artifact.add_file(best_model_path)
+    
+    # Log the artifact
+    wandb.log_artifact(artifact)
+    
+    # Link to model registry
+    wandb.run.link_artifact(
+        artifact=artifact,
+        target_path="krusand-danmarks-tekniske-universitet-dtu-org/wandb-registry-fer-model/Model new",
+        aliases=["latest"]
+    )
+    run.finish()
+
 if __name__ == "__main__":
-    app()
+    train()

@@ -35,6 +35,7 @@ dependencies = [
     "typer==0.15.1",
     "uvicorn==0.34.0",
     "wandb>=0.24.0",
+    "torchmetrics>=1.8.2",
 ]
 
 [dependency-groups]
@@ -95,6 +96,7 @@ exclude_lines = [
 ]
 
 [project.scripts]
-train = "exam_project.train:app"
-evaluate = "exam_project.evaluate:app"
+train = "exam_project.train:train"
+evaluate = "exam_project.evaluate:evaluate"
+test = "exam_project.test:test"
 

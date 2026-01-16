@@ -178,7 +178,7 @@ cython_debug/
 #.idea/
 
 # Data
-data/
+./data/
 models/*
 lightning_logs/
 /data
@@ -186,8 +186,8 @@ lightning_logs/
 # WANDB
 wandb/
 MLOps-exam/
-
-
+artifacts/
+/multirun
 
 # Hydra outputs
 outputs/

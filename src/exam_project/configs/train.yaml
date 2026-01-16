@@ -1,0 +1,6 @@
+defaults:
+  - models: ann 
+  - paths: default
+  - logger: wandb
+  - trainer: default
+  - data: default
