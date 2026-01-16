@@ -9,7 +9,15 @@ from pytorch_lightning.callbacks import ModelCheckpoint
 import os
 import torch
 import typer
+from dotenv import load_dotenv
+from pathlib import Path
 from typing import Annotated
+
+# Check if a .env file exists in the project root (if statement so GCP ignores this)
+dotenv_path = Path(__file__).parent.parent.parent / ".env"
+print (dotenv_path)
+if dotenv_path.exists():
+    load_dotenv(dotenv_path)
 
 WANDB_API_KEY = os.getenv("WANDB_API_KEY")
 WANDB_ENTITY = os.getenv("WANDB_ENTITY")
