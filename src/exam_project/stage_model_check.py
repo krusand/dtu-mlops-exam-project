@@ -1,6 +1,6 @@
 from exam_project.data import load_data
 from exam_project.model import BaseANN, BaseCNN, ViTClassifier
-from exam_project.utils import validate_environment
+from exam_project.utils import validate_environment, load_model_from_wandb, get_device_from_artifact
 
 import wandb
 import os
@@ -9,33 +9,18 @@ import torch
 from sklearn.metrics import accuracy_score
 from dotenv import load_dotenv
 load_dotenv()
-MODELS = {
-    'ann': BaseANN,
-    'cnn': BaseCNN,
-    'vit': ViTClassifier
-}
 
-def load_model(artifact: str, alias: str = 'staging'):
 
-    api = wandb.Api(
-        api_key=os.getenv("WANDB_API_KEY"),
-        overrides={"entity": os.getenv("WANDB_ENTITY_ORG")
-                   , "project": os.getenv("WANDB_PROJECT")},
-    )
+
+def test_model_speed() -> bool:
+    """
+    Tests to see if model can predict 100 values pr. second
     
-    artifact_name_version = f"{os.getenv("MODEL_NAME")}"
-    artifact_name, artifact_version = artifact_name_version.split(":")
-    artifact = api.artifact(f"{artifact_name}:{alias}", type="Model")
-    artifact.download(root="./artifacts")
-    file_name = artifact.files()[0].name
-    model = MODELS[os.getenv("MODEL_ARCHITECTURE")]
-    return model.load_from_checkpoint(f"./artifacts/{file_name}"), artifact
+    Returns:
+        should_promote (bool): True if can predict >100 pr. second, else False
+    """
 
-def get_device_from_artifact(artifact):
-    return artifact.metadata.get("device")
-
-def test_model_speed():
-    staging_model, staging_artifact = load_model(os.getenv("MODEL_NAME"), alias='staging')
+    staging_model, staging_artifact = load_model_from_wandb(artifact=os.getenv("MODEL_NAME"), alias='staging')
     start = time.time()
     for _ in range(100):
         staging_model(torch.rand(1, 1, 48, 48).to(get_device_from_artifact(staging_artifact)))
@@ -43,7 +28,19 @@ def test_model_speed():
     should_promote = end - start < 1
     return should_promote
 
-def evaluate_model(model, test_dataloader, device):
+def evaluate_model(model: BaseANN | BaseCNN | ViTClassifier, test_dataloader: torch.utils.data.DataLoader, device: str) -> float:
+    """
+    Evaluates model
+
+    Params:
+        - model (BaseANN | BaseCNN | ViTClassifier): The loaded, trained model
+        - test_dataloader (torch.utils.data.DataLoader): A DataLoader object with test data
+        - device (str): The device
+
+    Returns:
+        - test_acc (float): The test accuracy of the model
+    """
+
     y_pred = []
     y_true = []
     model.eval()
@@ -62,9 +59,16 @@ def evaluate_model(model, test_dataloader, device):
     return test_acc
 
 
-def test_staging_against_production_model():
-    staging_model, staging_artifact = load_model(os.getenv("MODEL_NAME"), alias='staging')
-    production_model, production_artifact = load_model(os.getenv("MODEL_NAME"), alias='production')
+def test_staging_against_production_model() -> bool:
+    """
+    Tests accuracy of staging model against the current production model
+    
+    Returns:
+        - should_promote (bool): True if staging accuracy is better than production accuracy
+    """
+
+    staging_model, staging_artifact = load_model_from_wandb(os.getenv("MODEL_NAME"), alias='staging')
+    production_model, production_artifact = load_model_from_wandb(os.getenv("MODEL_NAME"), alias='production')
     _, _, test = load_data(processed_dir="data/processed/")
     test = torch.utils.data.DataLoader(test, batch_size=64)
 
