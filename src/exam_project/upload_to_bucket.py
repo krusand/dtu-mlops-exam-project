@@ -1,4 +1,5 @@
 from exam_project.model import BaseCNN, BaseANN, ViTClassifier
+from exam_project.utils import validate_environment
 
 # Imports the Google Cloud client library
 from google.cloud import storage
@@ -18,22 +19,18 @@ MODELS = {
 }
 
 
-def validate_environment() -> None:
-    def validate_environment_var(environment_var: str) -> bool:
-        env_var = os.getenv(environment_var)
-        return all([env_var is not None, env_var != ""])
-    
-    logger.info("Asserting environment variables")
-
-    assert validate_environment_var("MODEL_ARCHITECTURE"), 'Environment variable "MODEL_ARCHITECTURE" is None or ""'
-    assert validate_environment_var("MODEL_NAME"), 'Environment variable "MODEL_NAME" is None or ""'
-    assert validate_environment_var("WANDB_API_KEY"), 'Environment variable "WANDB_API_KEY" is None or ""'
-    assert validate_environment_var("WANDB_ENTITY_ORG"), 'Environment variable "WANDB_ENTITY_ORG" is None or ""'
-    assert validate_environment_var("WANDB_PROJECT"), 'Environment variable "WANDB_PROJECT" is None or ""'
-
-    logger.info("All environment variables exist")
-
 def write_blob(bucket: storage.Client.bucket, blob_name: str, path_to_model: str) -> None:
+    """
+    Writes file to blob
+    
+    Params:
+        - bucket (storage.Client.bucket): The storage.Client.bucket initialised to our bucket.
+        - blob_name (str): The name of the blob (folder/file) to write to
+        - path_to_model (str): The path to the {model}.ckpt
+    
+    Returns:
+        - None
+    """
     logger.info("Writing to bucket")
     logger.info(f"Writing to blob: {blob_name}")
 
@@ -43,6 +40,17 @@ def write_blob(bucket: storage.Client.bucket, blob_name: str, path_to_model: str
     logger.info("ckpt uploaded")
 
 def save_model_to_checkpoint(model: BaseANN | BaseCNN | ViTClassifier, path_to_model: str) -> None:
+    """
+    Saves a loaded model to checkpoint
+
+    Params:
+        - model (BaseANN | BaseCNN | ViTClassifier): The model loaded from artifact checkpoint
+        - path_to_model (str): Path to save model
+    
+    Returns:
+        - None
+    """
+
     logger.info("Saving model to checkpoint")
 
     checkpoint = {
@@ -55,7 +63,19 @@ def save_model_to_checkpoint(model: BaseANN | BaseCNN | ViTClassifier, path_to_m
     
     logger.info(f"Model saved to {path_to_model}")
 
-def load_model_from_wandb(artifact: str, alias: str = 'production'):
+def load_model_from_wandb(artifact: str, alias: str = 'production') -> BaseANN | BaseCNN | ViTClassifier:
+    """
+    Loads model from a wandb artifact
+
+    Params:
+        - artifact (str): artifact string.
+            Example: "krusand-danmarks-tekniske-universitet-dtu-org/wandb-registry-fer-model/cnn:production"
+        - alias (str): The wandb alias of the model
+
+    Returns:
+        One of BaseANN, BaseCNN or ViTClassifier, loaded with artifact checkpoint    
+    """
+
     logger.info("Loading model artifact from WandB")
     logger.info("Function inputs:")
     logger.info(f"{artifact = }, {alias = }")
@@ -91,14 +111,16 @@ def load_model_from_wandb(artifact: str, alias: str = 'production'):
     return model.load_from_checkpoint(f"./artifacts/{file_name}"), artifact
 
 
-def test_model(model, artifact):
+def test_model(model, artifact) -> None:
+    """Tests model on random noise to see if it can predict"""
     def get_device_from_artifact(artifact):
+        """Gets device from artifact through metadata"""
         return artifact.metadata.get("device")
 
     model(torch.rand(1, 1, 48, 48).to(get_device_from_artifact(artifact)))
 
 
-def main():    
+def main():
     logger.info("Starting upload of production model")
 
     validate_environment()

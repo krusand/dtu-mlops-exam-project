@@ -1,5 +1,6 @@
 from exam_project.data import load_data
 from exam_project.model import BaseANN, BaseCNN, ViTClassifier
+from exam_project.utils import validate_environment
 
 import wandb
 import os
@@ -76,6 +77,7 @@ def test_staging_against_production_model():
     return should_promote
     
 def main():
+    validate_environment()
     should_promote = all([test_staging_against_production_model()])
     should_promote = 'true' if should_promote else 'false' # Used for better yaml handling
         
