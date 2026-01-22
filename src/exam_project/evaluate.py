@@ -40,20 +40,22 @@ def load_model(model_file_name: str = "checkpoint.pth", device: str = DEVICE) ->
 def get_predictions(
         model: Union[Module, LightningModule], 
         data_loader: DataLoader, 
-        device: torch.device
+        device: torch.device,
+        n: int,
         ) -> Tuple[List[int], List[int]]:
     """
     Evaluate a PyTorch or Lightning model on a dataset and return predictions and true labels.
 
     Args:
-        model: nn.Module or LightningModule
-        data_loader: DataLoader providing (inputs, targets)
-        device: torch.device to run the model on
+        model:          nn.Module or LightningModule
+        data_loader:    DataLoader providing (inputs, targets)
+        device:         torch.device to run the model on
+        n:              Number of test batches to process.
 
     Returns:
         Tuple containing:
-            - y_pred: list of predicted class indices
-            - y_true: list of true class indices
+            - y_pred:   list of predicted class indices
+            - y_true:   list of true class indices
     """
     y_pred = []
     y_true = []
@@ -61,12 +63,15 @@ def get_predictions(
     model.eval()
 
     with torch.no_grad():
-        for data, target in data_loader:
-            data, target = data.to(device), target.to(device)
-            y_true.append(target.item())
-            output = model(data)
-            predicted = output.argmax(dim=1)
-            y_pred.append(predicted.item())
+        for i, (data, target) in enumerate(data_loader):
+            if i >= n:
+                break
+            else:
+                data, target = data.to(device), target.to(device)
+                y_true.append(target.item())
+                output = model(data)
+                predicted = output.argmax(dim=1)
+                y_pred.append(predicted.item())
     
     return y_pred, y_true
 
@@ -97,7 +102,8 @@ def evaluate_model(model_file_name: str = "checkpoint.pth",
     test_loader = DataLoader(test, persistent_workers=True, num_workers=9)
 
     # making predictions on the test set one image at a time
-    y_pred, y_true = get_predictions(model, test_loader, device)
+    n = len(test_loader)
+    y_pred, y_true = get_predictions(model, test_loader, device, n)
 
     # computing evaluation metrics
     test_acc = accuracy_score(y_true, y_pred)
