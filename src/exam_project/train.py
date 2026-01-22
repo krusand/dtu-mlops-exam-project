@@ -1,11 +1,11 @@
 import hydra
 import os
 import pytorch_lightning
+import tempfile
 import torch
 import wandb
 
 from exam_project.data import load_data
-from google.cloud import storage
 from hydra.utils import instantiate
 from loguru import logger
 from omegaconf import OmegaConf
@@ -65,7 +65,7 @@ def train(cfg):
 
     # Define directories for running either locally or on Vertex AI
     DATA_DIR = os.environ.get("DATA_DIR", os.path.join(cfg.data_paths.data_root,cfg.data_paths.processed_str))
-    MODEL_DIR = os.environ.get("AIP_MODEL_DIR", cfg.model_paths.model_root)
+    MODEL_DIR = tempfile.mkdtemp(prefix="pl_ckpts_")#os.environ.get("AIP_MODEL_DIR", cfg.model_paths.model_root)
 
     # Set random seed
     pytorch_lightning.seed_everything(cfg.hyperparameters.seed, workers=True)
@@ -124,19 +124,7 @@ def train(cfg):
     )
     logger.info(artifact)
     # Add the model file to the artifact
-    if best_model_path.startswith("gs://"): #W&B cannot add unless file is local
-        local_model_path = "/tmp/" + os.path.basename(best_model_path)  # Temp local path
-        logger.info(f"{local_model_path = }")
-        
-        # Download from GCS
-        client = storage.Client()
-        bucket_name, blob_path = best_model_path[5:].split("/", 1)
-        bucket = client.bucket(bucket_name)
-        blob = bucket.blob(blob_path)
-        blob.download_to_filename(local_model_path)
-        artifact.add_file(local_model_path)  # update to local path
-    else:
-        artifact.add_file(best_model_path)
+    artifact.add_file(best_model_path)
     
     # Log model artifact
     wandb_log_artifact(artifact, model_name)

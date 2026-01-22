@@ -9,4 +9,7 @@ worker_pool_specs:
           value: gs://dtu-mlops-exam-project-data/models/vertex_training/
         - name: WANDB_API_KEY
           value: YOUR_SECRET_HERE
+      #args:
+      #  - models=my_model
+      #  - trainer.max_epochs=10
 service_account: vertexai-training-sa@decent-seeker-484209-j2.iam.gserviceaccount.com
