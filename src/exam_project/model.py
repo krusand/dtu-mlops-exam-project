@@ -84,8 +84,8 @@ class BaseCNN(LightningModule):
         loss = self.loss_fn(y_pred, target)
         y_pred_class = torch.argmax(y_pred, dim=1)
 
-        self.log("validation_loss", loss)
-        self.log("validation_accuracy", accuracy_score(y_true=target.cpu(), y_pred=y_pred_class.cpu()))
+        self.log("validation_loss", loss, sync_dist=True)#Sync across devices
+        self.log("validation_accuracy", accuracy_score(y_true=target.cpu(), y_pred=y_pred_class.cpu()), sync_dist=True)
         return loss
 
     
@@ -164,8 +164,8 @@ class BaseANN(LightningModule):
         loss = self.loss_fn(y_pred, target)
         y_pred_class = torch.argmax(y_pred, dim=1)
 
-        self.log("validation_loss", loss)
-        self.log("validation_accuracy", accuracy_score(y_true=target.cpu(), y_pred=y_pred_class.cpu()))
+        self.log("validation_loss", loss, sync_dist=True)#Sync across devices
+        self.log("validation_accuracy", accuracy_score(y_true=target.cpu(), y_pred=y_pred_class.cpu()), sync_dist=True)
         return loss
 
     def configure_optimizers(self):
@@ -246,8 +246,8 @@ class ViTClassifier(LightningModule):
         loss = self.loss_fn(y_pred, target)
         y_pred_class = torch.argmax(y_pred, dim=1)
 
-        self.log("validation_loss", loss)
-        self.log("validation_accuracy", accuracy_score(y_true=target.cpu(), y_pred=y_pred_class.cpu()))
+        self.log("validation_loss", loss, sync_dist=True)#Sync across devices
+        self.log("validation_accuracy", accuracy_score(y_true=target.cpu(), y_pred=y_pred_class.cpu()), sync_dist=True)
         return loss
     
     def configure_optimizers(self):
