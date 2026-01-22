@@ -23,7 +23,7 @@ jobs:
           echo "model_name=${{ github.event.client_payload.artifact_version_string }}" >> $GITHUB_OUTPUT
           echo "model_architecture=${{ github.event.client_payload.model_architecture }}" >> $GITHUB_OUTPUT
   
-  test_and_productionize_model:
+  upload_model:
     runs-on: ubuntu-latest
     needs: identify_event
     env:
@@ -69,6 +69,6 @@ jobs:
       with:
         credentials_json: ${{ secrets.GCP_SA_GITHUB_ACTION_BUCKET_READER }}
 
-    - name: Upload model to GC
+    - name: Upload model to GC Bucket
       run: |
         uv run src/exam_project/upload_to_bucket.py "$MODEL_NAME"
