@@ -5,7 +5,6 @@ from exam_project.utils import validate_environment, load_model_from_wandb, get_
 from google.cloud import storage
 from dotenv import load_dotenv
 import os
-import wandb
 import pytorch_lightning as pl
 import torch
 from loguru import logger

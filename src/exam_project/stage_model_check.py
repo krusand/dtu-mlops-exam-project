@@ -2,7 +2,6 @@ from exam_project.data import load_data
 from exam_project.model import BaseANN, BaseCNN, ViTClassifier
 from exam_project.utils import validate_environment, load_model_from_wandb, get_device_from_artifact
 
-import wandb
 import os
 import time
 import torch
