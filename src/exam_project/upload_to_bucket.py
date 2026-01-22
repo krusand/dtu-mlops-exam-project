@@ -26,11 +26,11 @@ def validate_environment() -> None:
     
     logger.info("Asserting environment variables")
 
-    assert validate_environment_var("MODEL_ARCHITECTURE"), f'Environment variable "MODEL_ARCHITECTURE" is None or ""'
-    assert validate_environment_var("MODEL_NAME"), f'Environment variable "MODEL_NAME" is None or ""'
-    assert validate_environment_var("WANDB_API_KEY"), f'Environment variable "WANDB_API_KEY" is None or ""'
-    assert validate_environment_var("WANDB_ENTITY_ORG"), f'Environment variable "WANDB_ENTITY_ORG" is None or ""'
-    assert validate_environment_var("WANDB_PROJECT"), f'Environment variable "WANDB_PROJECT" is None or ""'
+    assert validate_environment_var("MODEL_ARCHITECTURE"), 'Environment variable "MODEL_ARCHITECTURE" is None or ""'
+    assert validate_environment_var("MODEL_NAME"), 'Environment variable "MODEL_NAME" is None or ""'
+    assert validate_environment_var("WANDB_API_KEY"), 'Environment variable "WANDB_API_KEY" is None or ""'
+    assert validate_environment_var("WANDB_ENTITY_ORG"), 'Environment variable "WANDB_ENTITY_ORG" is None or ""'
+    assert validate_environment_var("WANDB_PROJECT"), 'Environment variable "WANDB_PROJECT" is None or ""'
 
     logger.info("All environment variables exist")
 
@@ -97,44 +97,42 @@ def test_model(model, artifact):
         return artifact.metadata.get("device")
 
     model(torch.rand(1, 1, 48, 48).to(get_device_from_artifact(artifact)))
-    
+
 
 def main():    
     logger.info("Starting upload of production model")
-    try:
-        validate_environment()
-        storage_client = storage.Client(project="decent-seeker-484209-j2")
-        bucket = storage_client.bucket("dtu-mlops-exam-project-data")
-        
-        logger.info("Connected to bucket")
 
-        model_architecture = os.getenv("MODEL_ARCHITECTURE")
+    validate_environment()
+    storage_client = storage.Client(project="decent-seeker-484209-j2")
+    bucket = storage_client.bucket("dtu-mlops-exam-project-data")
+    
+    logger.info("Connected to bucket")
 
-        logger.info(f"{model_architecture = }")
+    model_architecture = os.getenv("MODEL_ARCHITECTURE")
 
-        blobs = list(bucket.list_blobs(prefix=f"models/{model_architecture}"))
+    logger.info(f"{model_architecture = }")
 
-        # There should be a maximum of one {model}.ckpt in each model folder
-        assert len(blobs)-1 <= 1, "There should be only one ckpt in folder"
-        if len(blobs)-1 == 0:
-            logger.warning("No models found in folder, uploading new model")
-        else:
-            logger.info("Model already exist in folder. Overwriting model in folder")
+    blobs = list(bucket.list_blobs(prefix=f"models/{model_architecture}"))
 
-        model, artifact = load_model_from_wandb(os.getenv("MODEL_NAME"))
+    # There should be a maximum of one {model}.ckpt in each model folder
+    assert len(blobs)-1 <= 1, "There should be only one ckpt in folder"
+    if len(blobs)-1 == 0:
+        logger.warning("No models found in folder, uploading new model")
+    else:
+        logger.info("Model already exist in folder. Overwriting model in folder")
 
-        # Overwrite production model
-        save_model_to_checkpoint(model=model, path_to_model="production_model.ckpt")
-        write_blob(bucket=bucket
-                , blob_name=f"models/{model_architecture}/{model_architecture}_production_model.ckpt"
-                , path_to_model="production_model.ckpt")
-        
-        blobs = list(bucket.list_blobs(prefix=f"models/{model_architecture}"))
+    model, artifact = load_model_from_wandb(os.getenv("MODEL_NAME"))
 
-        assert len(blobs)-1 == 1, f"Model folder contains {len(blobs)-1} elements, it should contain 1"
-    except: # Crash the workflow step
-        sys.exit(1)
-        
+    # Overwrite production model
+    save_model_to_checkpoint(model=model, path_to_model="production_model.ckpt")
+    write_blob(bucket=bucket
+            , blob_name=f"models/{model_architecture}/{model_architecture}_production_model.ckpt"
+            , path_to_model="production_model.ckpt")
+    
+    blobs = list(bucket.list_blobs(prefix=f"models/{model_architecture}"))
+
+    assert len(blobs)-1 == 1, f"Model folder contains {len(blobs)-1} elements, it should contain 1"
+    
     logger.info("Finished upload of production model")
 
 if __name__ == '__main__':
