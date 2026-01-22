@@ -137,7 +137,7 @@ def main(cfg):
         ckpt_files = [blob for blob in blobs if blob.name.endswith(".ckpt")]
 
         if not ckpt_files:
-            raise FileNotFoundError("No .ckpt files found in the bucket!")
+            continue
 
         ckpt_blob = ckpt_files[0]
 
