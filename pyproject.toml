@@ -44,6 +44,7 @@ dependencies = [
     "loguru>=0.7.3",
     "matplotlib>=3.10.8",
     "evidently>=0.7.20",
+    "datetime>=6.0",
 ]
 
 [dependency-groups]
