@@ -21,4 +21,4 @@ uv run dvc pull data.dvc -r gcsremote --verbose
 
 # Run training
 echo "About to uv run train script..."
-uv run src/exam_project/train.py
+uv run src/exam_project/train.py "$@"
