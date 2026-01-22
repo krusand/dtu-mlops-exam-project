@@ -1,6 +1,8 @@
 defaults:
   - _self_
   - debug: default
+  - paths: data
+  - hyperparameters: default
 
 paths:
   data_root: 'data'
@@ -13,8 +15,6 @@ paths:
 hyperparameters:
   seed: 42
   trainvalsplit: 0.8
-  - paths: data
-  - hyperparameters: default
 
 meta:
   expected_classes: ["angry", "disgust", "fear", "happy", "neutral", "sad", "surprise"]
