@@ -1,0 +1,55 @@
+name: "Check for dataset changes"
+
+on:
+  schedule:
+    - cron: '* 12 * * *' # Runs every day at 12:00
+  workflow_dispatch: {}  # Allows manual executions
+
+jobs:
+  data_drift:
+    name: data_drift
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ["ubuntu-latest"]
+        python-version: ["3.12"]
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v5
+
+    - name: Setup uv
+      uses: astral-sh/setup-uv@v7
+      with:
+        python-version: ${{ matrix.python-version }}
+        enable-cache: true
+
+    - name: Install dependencies
+      run: |
+        uv sync --locked
+
+    - name: Cache DVC storage
+      uses: actions/cache@v4
+      with:
+        path: .dvc/cache
+        key: dvc-cache-${{ runner.os }}-${{ hashFiles('dvc.lock') }}
+        restore-keys: dvc-cache-${{ runner.os }}
+
+    - name: Auth with GCP
+      uses: google-github-actions/auth@v2
+      with:
+        credentials_json: ${{ secrets.GCP_SA_GITHUB_ACTION_BUCKET_READER }}
+
+    - name: Pull data
+      run: |
+        uv run dvc pull --no-run-cache
+
+    - name: Assess data drift
+      run: |
+        uv run src/exam_project/test_data_drift.py
+
+    - name: Upload reports
+      uses: actions/upload-artifact@v4
+      with:
+        name: ml-reports
+        path: reports/
