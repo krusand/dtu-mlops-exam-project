@@ -56,7 +56,7 @@ def main(cfg):
     storage_client = storage.Client(project="decent-seeker-484209-j2")
     bucket = storage_client.bucket("dtu-mlops-exam-project-data")
 
-    # Looking inside MMA blobs on GCP
+    # Looking inside MMA blobs
     prefix = cfg.paths.mma_path
     blobs = bucket.list_blobs(prefix=prefix)
 
