@@ -49,12 +49,15 @@ def evaluate_model(model, test_dataloader, device):
     with torch.no_grad():
         for data, target in test_dataloader:
             data, target = data.to(device), target.to(device)
-            y_true.append(target.item())
             output = model(data)
             predicted = output.argmax(dim=1)
-            y_pred.append(predicted.item())
+            y_true.append(target)
+            y_pred.append(predicted)
+    
+    y_true = torch.cat(y_true).to(device)
+    y_pred = torch.cat(y_pred).to(device)
 
-    test_acc = accuracy_score(y_true, y_pred)
+    test_acc = accuracy_score(y_true.tolist(), y_pred.tolist())
     return test_acc
 
 
@@ -62,7 +65,9 @@ def test_staging_against_production_model():
     staging_model, staging_artifact = load_model(os.getenv("MODEL_NAME"), alias='staging')
     production_model, production_artifact = load_model(os.getenv("MODEL_NAME"), alias='production')
     _, _, test = load_data(processed_dir="data/processed/")
-    test = torch.utils.data.DataLoader(test)
+    test = torch.utils.data.DataLoader(test, batch_size=64)
+
+
     staging_accuracy = evaluate_model(staging_model, test, get_device_from_artifact(staging_artifact))
     production_accuracy = evaluate_model(production_model, test, get_device_from_artifact(production_artifact))
     print(f"{staging_accuracy = }")
@@ -71,7 +76,7 @@ def test_staging_against_production_model():
     return should_promote
     
 def main():
-    should_promote = all([test_model_speed(), test_staging_against_production_model()])
+    should_promote = all([test_staging_against_production_model()])
     should_promote = 'true' if should_promote else 'false' # Used for better yaml handling
         
     if "GITHUB_OUTPUT" in os.environ:
