@@ -22,7 +22,6 @@ def load_model(artifact: str, alias: str = 'staging'):
                    , "project": os.getenv("WANDB_PROJECT")},
     )
     
-    
     artifact_name_version = f"{os.getenv("MODEL_NAME")}"
     artifact_name, artifact_version = artifact_name_version.split(":")
     artifact = api.artifact(f"{artifact_name}:{alias}", type="Model")
