@@ -5,6 +5,16 @@ on:
   repository_dispatch:
     types: productioned_model
 
+
+# Allow only one type of upload pr. model architecture to be run simultaneously
+# That is, ann and cnn can run, but not two ann runs
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.client_payload.model_architecture }}
+  
+  # If this is enabled it will cancel current running and start latest
+  cancel-in-progress: true
+
+
 jobs:
   identify_event:
     runs-on: ubuntu-latest
