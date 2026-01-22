@@ -1,0 +1,5 @@
+data_root: 'data'
+data_version_path: '1'
+kaggle_id: 'msambare/fer2013'
+processed_str: 'processed'
+raw_str: 'raw'
