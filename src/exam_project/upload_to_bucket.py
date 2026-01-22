@@ -8,7 +8,6 @@ import wandb
 import pytorch_lightning as pl
 import torch
 from loguru import logger
-import sys
 
 load_dotenv()
 
