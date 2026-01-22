@@ -15,15 +15,6 @@ from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.utilities.rank_zero import rank_zero_only
 
-DATA_DIR = os.environ.get("DATA_DIR", "data/processed/")
-MODEL_DIR = os.environ.get("AIP_MODEL_DIR", "models")
-
-#Make model dir if it doesn't not already exist
-os.makedirs(MODEL_DIR, exist_ok=True)
-
-#Set random seed
-pytorch_lightning.seed_everything(42, workers=True)
-
 @rank_zero_only
 def wandb_init(cfg, cfg_omega):
     return wandb.init(
@@ -71,6 +62,16 @@ def train(cfg):
 
     # Initialise once across devices via @rank_zero_only
     run = wandb_init(cfg, cfg_omega)
+
+    # Define directories for running either locally or on Vertex AI
+    DATA_DIR = os.environ.get("DATA_DIR", os.path.join(cfg.data_paths.data_root,cfg.data_paths.processed_str))
+    MODEL_DIR = os.environ.get("AIP_MODEL_DIR", "models")
+
+    # Set random seed
+    pytorch_lightning.seed_everything(cfg.hyperparameters.seed, workers=True)
+
+    # Make model dir if it doesn't not already exist
+    os.makedirs(MODEL_DIR, exist_ok=True)
 
     checkpoint_callback = ModelCheckpoint(
         monitor='validation_loss',
