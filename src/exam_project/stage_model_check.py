@@ -50,7 +50,8 @@ def evaluate_model(model: BaseANN | BaseCNN | ViTClassifier, test_dataloader: to
     y_true = []
     model.eval()
     with torch.no_grad():
-        for data, target in test_dataloader:
+        for i, (data, target) in enumerate(test_dataloader):
+            logger.info(f"Batch {i}")
             data, target = data.to(device), target.to(device)
             output = model(data)
             predicted = output.argmax(dim=1)
