@@ -1,3 +1,4 @@
+# src/exam_project/api.py
 import io
 import json
 import logging
@@ -17,7 +18,6 @@ from PIL import Image
 from torchvision import transforms
 from zoneinfo import ZoneInfo 
 
-
 from exam_project.model import BaseANN, BaseCNN, ViTClassifier
 
 logging.basicConfig(
@@ -36,7 +36,6 @@ model = None
 device = None
 current_model_name = None
 loaded_model_path = None
-
 
 USE_GCS = os.getenv("USE_GCS", "false").lower() == "true"
 GCS_BUCKET_NAME = os.getenv("GCS_BUCKET_NAME", "emotion-classifier-models")
@@ -164,11 +163,11 @@ def load_model_checkpoint(model_name: Optional[str] = None):
             blob.download_to_file(tmp)
             tmp_path = tmp.name
 
-        model = model_class.load_from_checkpoint(tmp_path, map_location=device)
+        model = model_class.load_from_checkpoint(tmp_path, map_location=device, weights_only = False)
         os.unlink(tmp_path)
         logger.info(f"Model loaded from GCS: {checkpoint_path}")
     else:
-        model = model_class.load_from_checkpoint(checkpoint_path, map_location=device)
+        model = model_class.load_from_checkpoint(checkpoint_path, map_location=device, weights_only = False)
         logger.info(f"Model loaded from local filesystem: {checkpoint_path}")
 
     loaded_model_path = checkpoint_path
@@ -282,7 +281,7 @@ def save_request_to_gcs(raw_bytes: bytes, upload: UploadFile, user_label: Option
 
             entry = {
                 "image_name": image_name,
-                "user_label": user_label,  
+                "user_label": user_label,
                 "model_output": prediction,
                 "model": {"model_name": model_used, "checkpoint_path": loaded_model_path},
                 "timestamp_utc": datetime.now(timezone.utc).isoformat(),
@@ -320,20 +319,33 @@ async def list_models():
 
 @app.post("/predict/")
 async def predict(
-    file: UploadFile = File(...),
-
+    file: Optional[UploadFile] = File(None),
     manual_label: Optional[str] = Form(None),
     model_name: Optional[str] = None,
     authorization: Optional[str] = Header(None),
     accept: Optional[str] = Header(None),
 ):
-   
     if authorization != "dtu":
         raise HTTPException(status_code=HTTPStatus.UNAUTHORIZED, detail="Invalid authorization header")
+
     if accept != "application/json":
         raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail="Invalid accept header")
 
-   
+    if file is None:
+        return JSONResponse(
+            status_code=HTTPStatus.UNPROCESSABLE_ENTITY,
+            content={
+                "detail": [
+                    {
+                        "type": "missing",
+                        "loc": ["body", "file"],
+                        "msg": "Field required",
+                        "input": None,
+                    }
+                ]
+            },
+        )
+
     manual_label_clean: Optional[str] = None
     if manual_label is not None:
         ml = manual_label.strip().lower()
