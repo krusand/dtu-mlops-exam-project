@@ -6,7 +6,7 @@ from loguru import logger
 from dotenv import load_dotenv
 load_dotenv()
 
-def productionize_artifact(artifact_path: str) -> None:
+def pre_productionize_artifact(artifact_path: str) -> None:
     """
     Promotes model to 'production' alias
 
@@ -55,4 +55,4 @@ def productionize_artifact(artifact_path: str) -> None:
     artifact.save()
 
 if __name__ == "__main__":
-    typer.run(productionize_artifact)
+    typer.run(pre_productionize_artifact)
