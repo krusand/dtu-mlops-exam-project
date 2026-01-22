@@ -1,7 +1,10 @@
 defaults:
   - models: ann 
-  - paths: default
+  - hyperparameters: default
   - logger: wandb
   - trainer: default
   - data: default
   - debug: default
+  - paths: default
+  - paths@data_paths: data
+  - paths@model_paths: model

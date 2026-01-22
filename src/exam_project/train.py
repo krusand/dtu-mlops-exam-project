@@ -1,30 +1,46 @@
-from exam_project.data import load_data
-
-from loguru import logger
 import hydra
-from hydra.utils import instantiate
-from pytorch_lightning import Trainer
-from pytorch_lightning.loggers import WandbLogger
-from pytorch_lightning.callbacks import ModelCheckpoint
+import os
+import pytorch_lightning
 import torch
 import wandb
-from omegaconf import OmegaConf
-import os
 
+from exam_project.data import load_data
 from google.cloud import storage
-import pytorch_lightning
+from hydra.utils import instantiate
+from loguru import logger
+from omegaconf import OmegaConf
 
-DATA_DIR = os.environ.get("DATA_DIR", "data/processed/")
-MODEL_DIR = os.environ.get("AIP_MODEL_DIR", "models")
+from pytorch_lightning import Trainer
+from pytorch_lightning.callbacks import ModelCheckpoint
+from pytorch_lightning.loggers import WandbLogger
+from pytorch_lightning.utilities.rank_zero import rank_zero_only
 
-NUM_WORKERS = int(os.getenv("NUM_WORKERS",f"{min(4, os.cpu_count())}"))
-PERSISTENT_WORKERS = NUM_WORKERS>0
+@rank_zero_only
+def wandb_init(cfg, cfg_omega):
+    return wandb.init(
+        project=cfg.logger.wandb.project,
+        entity=cfg.logger.wandb.entity,
+        job_type=cfg.logger.wandb.job_type,
+        config=cfg_omega
+    )
 
-#Make model dir if it doesn't not already exist
-os.makedirs(MODEL_DIR, exist_ok=True)
+@rank_zero_only
+def wandb_log_artifact(artifact, model_name):
+    # Log the artifact
+    wandb.log_artifact(artifact)
+    logger.info("Artifact created and logged")
+    logger.info("Linking artifact")
 
-#Set random seed
-pytorch_lightning.seed_everything(42, workers=True)
+    # Link to model registry
+    target_path = f"krusand-danmarks-tekniske-universitet-dtu-org/wandb-registry-fer-model/{model_name}"
+    wandb.run.link_artifact(
+        artifact=artifact,
+        target_path=target_path,
+        aliases=["latest", "staging"]
+    )
+    logger.info(target_path)
+    logger.info("Artifact linked")
+
 
 @hydra.main(config_path="configs", config_name="train", version_base=None)
 def train(cfg):
@@ -44,23 +60,32 @@ def train(cfg):
     cfg_omega = OmegaConf.to_container(cfg)
     model_name = hydra.core.hydra_config.HydraConfig.get().runtime.choices.models
 
-    run = wandb.init(
-        project=cfg.logger.wandb.project,
-        entity=cfg.logger.wandb.entity,
-        job_type=cfg.logger.wandb.job_type,
-        config=cfg_omega
-    )
+    # Initialise once across devices via @rank_zero_only
+    run = wandb_init(cfg, cfg_omega)
+
+    # Define directories for running either locally or on Vertex AI
+    DATA_DIR = os.environ.get("DATA_DIR", os.path.join(cfg.data_paths.data_root,cfg.data_paths.processed_str))
+    MODEL_DIR = os.environ.get("AIP_MODEL_DIR", cfg.model_paths.model_root)
+
+    # Set random seed
+    pytorch_lightning.seed_everything(cfg.hyperparameters.seed, workers=True)
+
+    # Make model dir if it doesn't not already exist
+    os.makedirs(MODEL_DIR, exist_ok=True)
 
     checkpoint_callback = ModelCheckpoint(
         monitor='validation_loss',
         mode='min',#i.e. we are aiming for the minimum validation loss
         dirpath=MODEL_DIR,
         filename='emotion-model-{epoch:02d}-{validation_loss:.2f}',
-        save_top_k=1
+        save_top_k=1# The best model (lowest validation loss) is saved
     )
 
+    #Note log_model="all" saves a model every epoch (x2 files per model: the model artifact and meta data).
     trainer_args = {"max_epochs": cfg.trainer.max_epochs
                     , 'accelerator': cfg.trainer.accelerator
+                    , 'devices':cfg.trainer.devices
+                    , 'strategy':"ddp"
                     , 'logger': WandbLogger(log_model=cfg.logger.wandb.log_model, project=cfg.logger.wandb.project)
                     , 'limit_train_batches': cfg.trainer.limit_train_batches
                     , 'limit_val_batches': cfg.trainer.limit_val_batches
@@ -68,17 +93,20 @@ def train(cfg):
                     , "callbacks": [checkpoint_callback]}
     logger.debug(f"{trainer_args = }")
     logger.info("Finished cfg setup")
-    logger.info("Starting dataloading")
-    train, val, test = load_data(processed_dir=DATA_DIR)
-    train = torch.utils.data.DataLoader(train, persistent_workers=PERSISTENT_WORKERS, num_workers=NUM_WORKERS, batch_size=cfg.data.batch_size)
-    val = torch.utils.data.DataLoader(val, persistent_workers=PERSISTENT_WORKERS, num_workers=NUM_WORKERS, batch_size=cfg.data.batch_size)
-    test = torch.utils.data.DataLoader(test, persistent_workers=PERSISTENT_WORKERS, num_workers=NUM_WORKERS, batch_size=cfg.data.batch_size)
-    logger.info("Finished dataloading")
 
     logger.info("Loading model")
     model = instantiate(cfg.models)
     logger.info("Model loaded")
     trainer = Trainer(**trainer_args)
+    NUM_WORKERS = max(1, os.cpu_count() // trainer.world_size)#Total_workers = devices*num_workers; no. of workers that feed batches of data
+    PERSISTENT_WORKERS = NUM_WORKERS > 0 #Whether workers stay alive across epochs
+    logger.info("Starting dataloading")
+    train, val, test = load_data(processed_dir=DATA_DIR)
+    train = torch.utils.data.DataLoader(train, shuffle=True, persistent_workers=PERSISTENT_WORKERS, num_workers=NUM_WORKERS, batch_size=cfg.data.batch_size, pin_memory=cfg.trainer.accelerator in ("gpu","cuda"))
+    val = torch.utils.data.DataLoader(val, shuffle=False, persistent_workers=PERSISTENT_WORKERS, num_workers=NUM_WORKERS, batch_size=cfg.data.batch_size)
+    test = torch.utils.data.DataLoader(test, shuffle=False, persistent_workers=PERSISTENT_WORKERS, num_workers=NUM_WORKERS, batch_size=cfg.data.batch_size)
+    logger.info("Finished dataloading")
+
     logger.info("Model fitting started")
     trainer.fit(model=model, train_dataloaders=train, val_dataloaders=val)
     logger.info("Model fitting finished")
@@ -110,20 +138,8 @@ def train(cfg):
     else:
         artifact.add_file(best_model_path)
     
-    # Log the artifact
-    wandb.log_artifact(artifact)
-    logger.info("Artifact created and logged")
-    logger.info("Linking artifact")
-
-    # Link to model registry
-    target_path = f"krusand-danmarks-tekniske-universitet-dtu-org/wandb-registry-fer-model/{model_name}"
-    wandb.run.link_artifact(
-        artifact=artifact,
-        target_path=target_path,
-        aliases=["latest", "staging"]
-    )
-    logger.info(target_path)
-    logger.info("Artifact linked")
+    # Log model artifact
+    wandb_log_artifact(artifact, model_name)
     run.finish()
     logger.info("Training script finished")
 
