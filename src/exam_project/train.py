@@ -6,7 +6,6 @@ import torch
 import wandb
 
 from exam_project.data import load_data
-from google.cloud import storage
 from hydra.utils import instantiate
 from loguru import logger
 from omegaconf import OmegaConf
