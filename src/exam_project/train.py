@@ -65,7 +65,7 @@ def train(cfg):
 
     # Define directories for running either locally or on Vertex AI
     DATA_DIR = os.environ.get("DATA_DIR", os.path.join(cfg.data_paths.data_root,cfg.data_paths.processed_str))
-    MODEL_DIR = os.environ.get("AIP_MODEL_DIR", "models")
+    MODEL_DIR = os.environ.get("AIP_MODEL_DIR", cfg.model_paths.model_root)
 
     # Set random seed
     pytorch_lightning.seed_everything(cfg.hyperparameters.seed, workers=True)
