@@ -47,3 +47,9 @@ jobs:
     - name: Assess data drift
       run: |
         uv run src/exam_project/test_data_drift.py
+
+    - name: Upload reports
+      uses: actions/upload-artifact@v4
+      with:
+        name: ml-reports
+        path: reports/
