@@ -85,7 +85,7 @@ with st.sidebar:
             if response.status_code == 200:
                 data = response.json()
                 model_name = data.get("model", "unknown")
-                st.success(f"API is online (Model: {model_name})")
+                st.success("API is online")
             else:
                 st.error(f"API error: {response.status_code}")
         except requests.exceptions.ConnectionError:
