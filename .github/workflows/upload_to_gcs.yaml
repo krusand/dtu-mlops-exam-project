@@ -69,18 +69,6 @@ jobs:
       with:
         credentials_json: ${{ secrets.GCP_SA_GITHUB_ACTION_BUCKET_READER }}
 
-    - name: Pull data
+    - name: Upload model to GC
       run: |
-        uv run dvc pull --no-run-cache
-
-    - name: Run model test
-      id: model_check
-      run: |
-        echo "Testing staged model..."
-        uv run src/exam_project/stage_model_check.py
-
-    - name: Productionize model
-      if: steps.model_check.outputs.promote=='true'
-      run: |
-        echo "Promotion criteria met. Promoting model..."
-        uv run src/exam_project/productionize_model.py "$MODEL_NAME"
+        uv run src/exam_project/upload_to_bucket.py "$MODEL_NAME"
