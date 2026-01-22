@@ -75,11 +75,5 @@ def main():
     # Delete model
     delete_blob(bucket, ckpt.name)
 
-
-
-
-
-
 if __name__ == '__main__':
     main()
-
