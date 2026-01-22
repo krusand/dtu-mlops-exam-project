@@ -3,7 +3,7 @@ name: Upload production model to gc bucket
 # Activate when WandB has a new staging model
 on:
   repository_dispatch:
-    types: productioned_modle
+    types: productioned_model
 
 jobs:
   identify_event:
