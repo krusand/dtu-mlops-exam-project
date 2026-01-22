@@ -3,9 +3,6 @@ name: "Build and push latest vertex docker image to GCP artifact registry"
 on:
   push:
     branches: [ main ]
-  pull_request:
-    branches: [ main ]
-
 
 jobs:
   build:
