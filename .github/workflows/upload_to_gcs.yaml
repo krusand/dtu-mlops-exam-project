@@ -1,0 +1,86 @@
+name: Upload production model to gc bucket
+
+# Activate when WandB has a new staging model
+on:
+  repository_dispatch:
+    types: productioned_modle
+
+jobs:
+  identify_event:
+    runs-on: ubuntu-latest
+    outputs:
+      model_name: ${{ steps.set_output.outputs.model_name }}
+      model_architecture: ${{ steps.set_output.outputs.model_architecture }}
+    steps:
+      - name: Check event type
+        run: |
+          echo "Event type: repository_dispatch"
+          echo "Payload Data: ${{ toJson(github.event.client_payload) }}"
+
+      - name: Setting model environment variable and output
+        id: set_output
+        run: |
+          echo "model_name=${{ github.event.client_payload.artifact_version_string }}" >> $GITHUB_OUTPUT
+          echo "model_architecture=${{ github.event.client_payload.model_architecture }}" >> $GITHUB_OUTPUT
+  
+  test_and_productionize_model:
+    runs-on: ubuntu-latest
+    needs: identify_event
+    env:
+      WANDB_API_KEY: ${{ secrets.WANDB_API_KEY }}
+      WANDB_ENTITY_ORG: ${{ secrets.WANDB_ENTITY_ORG }}
+      WANDB_PROJECT: ${{ secrets.WANDB_PROJECT }}
+      MODEL_NAME: ${{ needs.identify_event.outputs.model_name }}
+      MODEL_ARCHITECTURE: ${{ needs.identify_event.outputs.model_architecture }}
+
+    steps:
+    - name: Echo model info
+      run: |
+        echo "Model name: $MODEL_NAME"
+        echo "Model architecture: $MODEL_ARCHITECTURE"
+
+    - name: Checkout code
+      uses: actions/checkout@v5
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: 3.11
+        enable_cache: true
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v4
+      with:
+        version: "latest"
+
+    - name: Install dependencies
+      run: |
+        uv sync --locked
+        
+    - name: Cache DVC storage
+      uses: actions/cache@v4
+      with:
+        path: .dvc/cache
+        key: dvc-cache-${{ runner.os }}-${{ hashFiles('dvc.lock') }}
+        restore-keys: dvc-cache-${{ runner.os }}
+
+    - name: Auth with GCP
+      uses: google-github-actions/auth@v2
+      with:
+        credentials_json: ${{ secrets.GCP_SA_GITHUB_ACTION_BUCKET_READER }}
+
+    - name: Pull data
+      run: |
+        uv run dvc pull --no-run-cache
+
+    - name: Run model test
+      id: model_check
+      run: |
+        echo "Testing staged model..."
+        uv run src/exam_project/stage_model_check.py
+
+    - name: Productionize model
+      if: steps.model_check.outputs.promote=='true'
+      run: |
+        echo "Promotion criteria met. Promoting model..."
+        uv run src/exam_project/productionize_model.py "$MODEL_NAME"
