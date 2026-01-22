@@ -61,25 +61,19 @@ def main():
 
     model_architecture = os.getenv("MODEL_ARCHITECTURE")
 
-    model, artifact = load_model_from_wandb(os.getenv("MODEL_NAME"))
-    # Upload new production model
-
     # Find model to delete
     blobs = list(bucket.list_blobs(prefix=f"models/{model_architecture}"))
     ckpts = [blob for blob in blobs if blob.name.endswith(".ckpt")]
     #assert len(ckpts) == 1, "More than one ckpt"
     ckpt = ckpts[0]
 
+    model, artifact = load_model_from_wandb(os.getenv("MODEL_NAME"))
+    # Upload new production model
     save_model_to_checkpoint(model)
     write_blob(bucket, f"models/{model_architecture}/{model_architecture}_production_model.ckpt")
 
     # Delete model
     delete_blob(bucket, ckpt.name)
 
-
-
-
-
 if __name__ == '__main__':
     main()
-
