@@ -120,6 +120,7 @@ def main(cfg):
     # Generating data drift report
     report = Report(metrics=[DataDriftTable()])
     report.run(reference_data=reference_data, current_data=current_data)
+    os.makedirs("reports", exist_ok=True)
     report.save_html("reports/data_drift.html")
 
     model_names = []
