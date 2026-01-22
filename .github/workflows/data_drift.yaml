@@ -1,4 +1,4 @@
-name: "Check for dataset changes"
+name: "Detect data drift"
 
 on:
   schedule:
