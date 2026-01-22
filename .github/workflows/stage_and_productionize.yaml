@@ -1,4 +1,4 @@
-name: Staging and productionizing
+name: Staging and pre-productionizing
 
 # Activate when WandB has a new staging model
 on:
@@ -23,7 +23,7 @@ jobs:
           echo "model_name=${{ github.event.client_payload.artifact_version_string }}" >> $GITHUB_OUTPUT
           echo "model_architecture=${{ github.event.client_payload.model_architecture }}" >> $GITHUB_OUTPUT
   
-  test_and_productionize_model:
+  test_and_pre_productionize_model:
     runs-on: ubuntu-latest
     needs: identify_event
     env:
@@ -79,8 +79,8 @@ jobs:
         echo "Testing staged model..."
         uv run src/exam_project/stage_model_check.py
 
-    - name: Productionize model
+    - name: Pre-Productionize model
       if: steps.model_check.outputs.promote=='true'
       run: |
         echo "Promotion criteria met. Promoting model..."
-        uv run src/exam_project/productionize_model.py "$MODEL_NAME"
+        uv run src/exam_project/pre_productionize_model.py "$MODEL_NAME"
