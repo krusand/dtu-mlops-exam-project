@@ -11,6 +11,7 @@ paths:
   mma_path: 'mma_sample/raw/'
   processed_str: 'processed'
   raw_str: 'raw'
+  requests_path: 'requests'
 
 hyperparameters:
   seed: 42
