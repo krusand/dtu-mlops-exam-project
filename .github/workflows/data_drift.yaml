@@ -1,8 +1,8 @@
-name: "Check for dataset changes"
+name: "Detect data drift"
 
 on:
   schedule:
-    - cron: '* 12 * * *' # Runs every day at 12:00
+    - cron: '30 23 * * *' # Runs every day at 23:30
   workflow_dispatch: {}  # Allows manual executions
 
 jobs:

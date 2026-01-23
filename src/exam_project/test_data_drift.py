@@ -1,10 +1,15 @@
 from io import BytesIO
+import json
 import os
 import tempfile
+from typing import Callable, Iterable, List, Tuple
 
+from datetime import datetime, timedelta, timezone
 from evidently.legacy.metrics import DataDriftTable
 from evidently.legacy.report import Report
 from google.cloud import storage
+from google.cloud.storage.blob import Blob
+from google.cloud.storage.bucket import Bucket
 import hydra
 from hydra.utils import get_original_cwd
 import numpy as np
@@ -12,6 +17,7 @@ import pandas as pd
 from PIL import Image
 from sklearn.metrics import accuracy_score, f1_score
 import torch
+from torch import Tensor
 from torch.utils.data import DataLoader
 from torchvision import transforms
 from tqdm import tqdm
@@ -40,6 +46,107 @@ def extract_features(images):
     return np.array(features)
 
 
+def filter_date_blobs(date_blobs: Iterable[Blob], prefix: str, last_n_days: int) -> List[str]:
+    """Filters a series of date folders (blobs) in a GCP bucket based on last n days."""
+    # Filtering date blobs
+    valid_date_folders = set()
+    cutoff_date = datetime.now(timezone.utc) - timedelta(days=last_n_days)
+    prefix = prefix.rstrip('/') + '/'
+
+    for date_blob in date_blobs:
+        # Remove prefix and split path
+        relative_path = date_blob.name.replace(prefix, "")
+        parts = relative_path.split("/")
+
+        if len(parts) < 1:
+            continue
+
+        date_str = parts[0]  # date expected in format "dd-mm-yyyy"
+
+        try:
+            folder_date = datetime.strptime(date_str, "%d-%m-%Y")
+            # Making it timezone-aware in UTC so it can be compared to the cutoff_date
+            folder_date = folder_date.replace(tzinfo=timezone.utc)
+        except ValueError:
+            continue
+
+        if folder_date >= cutoff_date:
+            valid_date_folders.add(date_str)
+
+    # Sorting valid_date_folders in ascending order
+    s1 = pd.Series(list(valid_date_folders))
+    s2 = s1.apply(pd.to_datetime, format="%d-%m-%Y").sort_values()
+    s3 = s2.dt.strftime("%d-%m-%Y").tolist()
+
+    return s3
+
+
+def load_labels_from_json(blob: Blob) -> dict[str, str]:
+    """Returns mapping: image_name -> user_label"""
+    data = json.loads(blob.download_as_text())
+
+    return {
+        entry["image_name"]: entry["user_label"]
+        for entry in data
+        if "image_name" in entry and "user_label" in entry
+    }
+
+
+def load_images_and_labels_from_date_folder(bucket: Bucket,
+                                            date_folder: str,
+                                            prefix: str,
+                                            transform: Callable[[Image.Image], Tensor],
+                                            class_to_idx: dict[str, int]
+                                            ) -> Tuple[List[Tensor], List[int]]:
+    images = []
+    labels = []
+    blobs = list(bucket.list_blobs(prefix=f"{prefix}/{date_folder}"))
+    print(blobs)
+    # Finding the JSON blob
+    json_blob = next((b for b in blobs if b.name.endswith(".json")), None)
+
+    if json_blob is None:
+        raise RuntimeError(f"No JSON found in {date_folder}")
+
+    label_lookup = load_labels_from_json(json_blob)
+
+    # Loading images
+    for blob in blobs:
+        if not blob.name.lower().endswith((".jpg", ".jpeg", ".png")):
+            continue
+
+        image_name = blob.name.split("/")[-1]
+
+        if image_name not in label_lookup:
+            # Skip images without labels
+            continue
+        
+        image_true_label = label_lookup[image_name]
+
+        if image_true_label not in class_to_idx:
+            # Skip images with an invalid true label, e.g. null
+            continue
+
+        image_bytes = blob.download_as_bytes()
+        img = Image.open(BytesIO(image_bytes)).convert("RGB")
+        img = transform(img)
+        images.append(img)
+        labels.append(class_to_idx[image_true_label])
+
+    return images, labels
+
+
+def extract_class_mapping_from_json(blob: Blob) -> dict[str, int]:
+    data = json.loads(blob.download_as_text())
+
+    if not data:
+        raise ValueError("Empty JSON")
+
+    probabilities = data[0]["model_output"]["probabilities"]
+
+    return {class_name: idx for idx, class_name in enumerate(sorted(probabilities.keys()))}
+
+
 @hydra.main(config_path="configs", config_name="data", version_base=None)
 def main(cfg):
     # Tensor transformation for image datasets
@@ -56,36 +163,47 @@ def main(cfg):
     storage_client = storage.Client(project="decent-seeker-484209-j2")
     bucket = storage_client.bucket("dtu-mlops-exam-project-data")
 
-    # Looking inside MMA blobs
-    prefix = cfg.paths.mma_path
-    blobs = bucket.list_blobs(prefix=prefix)
+    # Obtaining requests blobs
+    prefix = cfg.paths.requests_path
+    date_blobs = bucket.list_blobs(prefix=prefix)
+    print(f"Date blobs: {date_blobs}")
+    # Filter date_blobs
+    window = cfg.hyperparameters.data_drift_window
+    valid_date_blobs = filter_date_blobs(date_blobs=date_blobs, prefix=prefix, last_n_days=window)
+    print(f"Valid date blobs: {valid_date_blobs}")
+    if len(valid_date_blobs) == 0:
+        raise LookupError(f"No images has been uploaded in the last {window} days")
 
-    # Collect unique class folder names
-    class_names = set()
-    for blob in blobs:
-        parts = blob.name.replace(prefix, "").split("/")
-        if len(parts) > 1:  # ensures it's inside a class folder
-            class_names.add(parts[0])
+    # Retrieving json file from most recent date blob
+    most_recent_date = valid_date_blobs[-1]
+    json_blob = next(
+        b for b in bucket.list_blobs(prefix=f"{prefix}/{most_recent_date}/")
+        if b.name.endswith(".json")
+    )
 
-    # Mapping class names to integer labels
-    class_names = sorted(list(class_names))
-    class_to_idx = {cls: idx for idx, cls in enumerate(class_names)}
+    # Raise error if the json file does not exist
+    if json_blob is None:
+        raise FileNotFoundError(f"No JSON found in the folder of {most_recent_date}")
 
-    # Looping through subfolders
+    # Dictionary to map labels to indices
+    class_to_idx = extract_class_mapping_from_json(json_blob)
+    print(f"Class dict: {class_to_idx}")
+    # Load date from all valid date blobs (folders)
     ref_images = []
     ref_labels = []
-    for cls_name in class_names:
-        cls_folder = f"{prefix}{cls_name}/"
-        blobs = bucket.list_blobs(prefix=cls_folder)
-        
-        for blob in blobs:
-            if blob.name.endswith((".jpg", ".png", ".jpeg")):
-                image_bytes = blob.download_as_bytes()
-                img = Image.open(BytesIO(image_bytes)).convert("RGB")
-                img = transform(img)
-                ref_images.append(img)
-                ref_labels.append(class_to_idx[cls_name])
 
+    for date_folder in valid_date_blobs:
+        imgs, lbls = load_images_and_labels_from_date_folder(
+            bucket,
+            date_folder,
+            prefix,
+            transform,
+            class_to_idx
+        )
+        ref_images.extend(imgs)
+        ref_labels.extend(lbls)
+    print(ref_images)
+    print(ref_labels)
     # Stacking images and labels into tensors
     ref_image_tensor = torch.stack(ref_images)           # Shape: [N, C, H, W]
     ref_label_tensor = torch.tensor(ref_labels)          # Shape: [N]
@@ -116,12 +234,15 @@ def main(cfg):
     # Final dataframes for evidently
     reference_data = feature_df[feature_df["Dataset"] == "ref"].drop(columns=["Dataset"])
     current_data = feature_df[feature_df["Dataset"] == "fer"].drop(columns=["Dataset"])
- 
+    
+    # Today's date to be added as suffix to exported files
+    today_str = datetime.now(timezone.utc).strftime("%d%m%y")
+
     # Generating data drift report
     report = Report(metrics=[DataDriftTable()])
     report.run(reference_data=reference_data, current_data=current_data)
     os.makedirs("reports", exist_ok=True)
-    report.save_html("reports/data_drift.html")
+    report.save_html(f"reports/data_drift_{today_str}.html")
 
     model_names = []
     curr_accs = []
@@ -159,7 +280,7 @@ def main(cfg):
         fer_test_loader = DataLoader(fer_test_set, persistent_workers=True, num_workers=9, shuffle=True)
 
         # Get predictions
-        n_ref = len(ref_test_loader)
+        n_ref = len(ref_test_set)
         y_pred_ref, y_true_ref = get_predictions(model, ref_test_loader, DEVICE, n_ref)
         n_fer = 100
         y_pred_fer, y_true_fer = get_predictions(model, fer_test_loader, DEVICE, n_fer)
@@ -188,7 +309,7 @@ def main(cfg):
                  "ref_f1": ref_f1s,
                  "ref_n_samples": ref_n_samples}
     df = pd.DataFrame(data_dict)
-    df.to_csv("reports/performance_comparison.csv")
+    df.to_csv(f"reports/performance_comparison_{today_str}.csv")
 
 
 if __name__ == "__main__":

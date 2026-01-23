@@ -11,10 +11,12 @@ paths:
   mma_path: 'mma_sample/raw/'
   processed_str: 'processed'
   raw_str: 'raw'
+  requests_path: 'requests'
 
 hyperparameters:
   seed: 42
   trainvalsplit: 0.8
+  data_drift_window: 14
 
 meta:
   expected_classes: ["angry", "disgust", "fear", "happy", "neutral", "sad", "surprise"]
