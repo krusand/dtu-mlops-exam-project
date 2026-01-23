@@ -2,7 +2,7 @@ from io import BytesIO
 import json
 import os
 import tempfile
-from typing import Callable, Iterable, List, Set, Tuple
+from typing import Callable, Iterable, List, Tuple
 
 from datetime import datetime, timedelta, timezone
 from evidently.legacy.metrics import DataDriftTable
