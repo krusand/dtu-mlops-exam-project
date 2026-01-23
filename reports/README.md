@@ -105,7 +105,7 @@ will check the repositories and the code to verify your answers.
 * [ ] Create one or more alert systems in GCP to alert you if your app is not behaving correctly (M28)
 * [x] If applicable, optimize the performance of your data loading using distributed data loading (M29)
 * [x] If applicable, optimize the performance of your training pipeline by using distributed training (M30)
-* [ ] Play around with quantization, compilation and pruning for you trained models to increase inference speed (M31)
+* [x] Play around with quantization, compilation and pruning for you trained models to increase inference speed (M31)
 
 ### Extra
 
@@ -168,7 +168,8 @@ s214618, s260006, s254120, s253844
 >
 > Answer:
 
---- question 4 fill here ---
+We used `uv` as we found it as a simple and effective tool to handle dependencies . To initialize `uv` we ran `uv init dtu-mlops-exam-project` which initialized the `pyproject.toml` and `uv.lock` files. Whenever a new dependency was added, one of us used the `uv add <dependency_name>` command and the corresponding dependency was added to the `pyproject.toml` file. The specific version was added to the `uv.lock` file.  
+For a new team member to get an exact copy of our uv environment, he/she will have to first clone our repository by running `git clone https://github.com/krusand/dtu-mlops-exam-project.git`. Once the repository is cloned, the new team member should download `uv` following [this installation guide](https://docs.astral.sh/uv/getting-started/installation/) and then run `uv sync`. 
 
 ### Question 5
 
@@ -184,7 +185,7 @@ s214618, s260006, s254120, s253844
 >
 > Answer:
 
---- question 5 fill here ---
+As expected we used the [course cookiecutter template](https://github.com/SkafteNicki/mlops_template) to structure our project repository. The main folder is `src/exam_project`, which contains all our scripts and config files. The `configs` folder is located at the root in the template, but we decided to move it inside the `src/exam_project` folder. In this way the config files are stored closer to the scripts which are the ones being configured. Other important folders include `dvc`, `.github/workflows`, `dockerfiles`, `reports`, and `tests`. The folder names of these folders should clearly indicate what they contain. The project template includes a `requirements.txt` file, but we are not including this in our repository since we are using `uv` for managing dependencies.  
 
 ### Question 6
 
@@ -199,7 +200,9 @@ s214618, s260006, s254120, s253844
 >
 > Answer:
 
---- question 6 fill here ---
+We are using `ruff` for linting as part of a GitHub workflow triggered on every push and pull-request to the main branch. The workflow is defined by the `linting.yaml` file in the `.github/workflows` folder and runs `ruff check src/exam_project/.`. In this way we ensure that our scripts follow the same overall formatting, e.g. no unused imports. When defining a function, we made sure to apply typing for the input arguments as well as the output variable(s). When details related to any code were important and/or unintuitive we found it useful to add a small comment explaining what is going on, e.g. the dimensions of a tensor or skipping an iteration in a loop. 
+
+We believe the concepts of formatting, typing and documentation makes it easier for larger teams to collaborate   
 
 ## Version control
 
@@ -218,7 +221,7 @@ s214618, s260006, s254120, s253844
 >
 > Answer:
 
---- question 7 fill here ---
+In total we have implemented 12 tests. Primarily we are testing the data, the models and the api as these are the most critical parts of our emotion classification app. We tested whether our code would execute and behave the way we intended for the workflow we chose for this project. For the data and models, we tested things such as shape and reproducability. The api was tested by requesting the Cloud Run and checking various headers that are correct/incorrect. We tested using Linux, Windows and Macos and different Python versions.
 
 ### Question 8
 
@@ -233,9 +236,9 @@ s214618, s260006, s254120, s253844
 >
 > Answer:
 
---- question 8 fill here ---
+The total code coverage of code is 14%, which includes all our source code. This is far from 100% coverage, but it makes sense since we, for example, test the built API on Google Run rather than testing the API code directly. Even if we achieved 100% code coverage, it would not guarantee that the code is error-free. Code coverage only measures the lines of code executed during tests, not whether the tests themselves are comprehensive or cover all edge cases. Furthermore, earlier in the project the reported coverage was higher, but the percentage alone is not a reliable indicator of quality. As more parts of the system were added (e.g., frontend), the overall number changed, highlighting areas where we have not yet implemented unit testing.
 
-### Question 9
+### Question 9 (Sam)
 
 > **Did you workflow include using branches and pull requests? If yes, explain how. If not, explain how branches and**
 > **pull request can help improve version control.**
@@ -248,7 +251,7 @@ s214618, s260006, s254120, s253844
 >
 > Answer:
 
---- question 9 fill here ---
+We did collaborative code development using branches, PRs and code reviews. Our strategy was to have main as a protected branch, meaning a push to main was allowed only via a pull request for another branch to be merged into main. To implement new features, we branched off main, developed, git pushed our commits, then made a PR that was reviewed by another member. After all tests/checks passed the PR and merge was completed and the feature branch deleted.
 
 ### Question 10
 
@@ -263,7 +266,7 @@ s214618, s260006, s254120, s253844
 >
 > Answer:
 
---- question 10 fill here ---
+We set up DVC for our project. First we downloaded and preprocessed our data from kaggle. Then we created a bucket on Google Storage via GCP. We set the dvc remote storage for our repo to be this bucket, then dvc added and pushed our dvc data hash to the remote repository. We made sure also to git commit the dvc files with a commit tag denoting that this was version 1 of the dataset. This means a future user can always revert back to this git commit and dvc pull from there to get that specific version of the data. Throughout our project we execute uv run dvc pull to pull in the correct version of the data. For upgrading a model from staging to production we make use of caching to speed up dvc pull.
 
 ### Question 11
 
@@ -299,9 +302,9 @@ s214618, s260006, s254120, s253844
 >
 > Answer:
 
---- question 12 fill here ---
+We used a Hydra config files that worked using: uv run train models=cnn data.batch_size=256 hyperparameters.seed=420 models.lr=0.001And so forth. We use a train.yaml file which refers to other .yaml files, for example models.yaml and data.yaml . The above example would run an experiment using the cnn model, a batch size of 256, a seed of 420 and a learning rate of 0.001. All other parameters are the default parameters as configured in the config files referred to by train.yaml.
 
-### Question 13
+### Question 13 
 
 > **Reproducibility of experiments are important. Related to the last question, how did you secure that no information**
 > **is lost when running experiments and that your experiments are reproducible?**
@@ -314,7 +317,7 @@ s214618, s260006, s254120, s253844
 >
 > Answer:
 
---- question 13 fill here ---
+We used Hydra in combination with WandB. We logged the full Hydra config to the WandB run, as well as loss and accuracy. When we run an experiment using uv run train, it uses the Hydra config files, and defaulting to the ann model. We always use a seed, which can also be looked up in the WandB run, because the whole config is tracked. To reproduce an experiment, one should find the run in WandB, go to the overview, and run the exact same command listed under "Command". In our case, to reproduce experiment resilient-glitter-176, one would run /app/src/exam_project/train.py models=cnn data.batch_size=256 trainer.max_epochs=10. Since this was run on Vertex AI, it says /app/. This is not needed locally.
 
 ### Question 14
 
@@ -331,7 +334,7 @@ s214618, s260006, s254120, s253844
 >
 > Answer:
 
---- question 14 fill here ---
+We use WandB to track experiments and sweeps. As seen in two images, we tracked validation loss and validation accuracy, aswell as training loss and training accuracy. Furthermore the epoch number. The training loss is important because it can be used to see whether the model actually works. Training loss should go down every epoch. If it suddenly goes up, there clearly is a mistake in the code. Validation loss is important, because it shows when the model starts overfitting. Thus we can see when the Earlystopping callback would kick in. The validation accuracy thus informs us what the expected accuracy would be in the real world.For the sweeps, we didn't run this fully, since some of our models took a long time to train, but we tracked the validation loss and accuracy for this as well. We optimised hyperparameters like model dropout, learning rate and the number of epochs for the sweeps. The sweeps use a bayesian hyperparameter tuning strategy, which is efficient.
 
 ### Question 15
 
@@ -346,7 +349,7 @@ s214618, s260006, s254120, s253844
 >
 > Answer:
 
---- question 15 fill here ---
+We use docker images and containers for training with Vertex AI. The train_vertex.dockerfile defines an image that copies the source project, uv.lock and .dvc files; it then uv syncs and executes an entrypoint.sh file; the entrypoint sets the remote storage to be the GC bucket, dvc pulls the data, then executes the train.py script, including optional command line arguments. We build the docker image and push it to our GC artifact registry whenever there is a push to the main branch; this is facilitated via a GitHub workflow. The containerised train script allows for reproducability and robustness for training models, and allows for Vertex AI tooling to be leveraged. We used a Dockerfile to package the FastAPI app into a container image for Cloud Run. The image starts installs uv, copies in the dependency files (pyproject.toml, uv.lock) and installs dependencies, then copies the source code. Finally, it defines an entrypoint that starts the API with Uvicorn on 0.0.0.0:8080, which is the port Cloud Run expects.
 
 ### Question 16
 
@@ -378,7 +381,7 @@ s214618, s260006, s254120, s253844
 >
 > Answer:
 
---- question 17 fill here ---
+For training we make use of an artifact registry (for storing the training docker image), a GCP bucket (for storing the data that the train script utilises) and Vertex AI (for executing training). For the API, we used Cloud Run and a Bucket. The API ran on Cloud Run, and when it received a request with the required headers, it loaded the specified model from a folder in the bucket, generated a prediction and then stored the uploaded image along with the user’s label and the model’s prediction.
 
 ### Question 18
 
