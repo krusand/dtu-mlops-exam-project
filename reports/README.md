@@ -633,6 +633,8 @@ s254120 worked primarily on implementing the initial model scripts, hydra config
 
 Student s214618 was in charge of creating the ViT (using a pretrained model) and ANN model, developing the unit tests, calculating code coverage, add caching/multi-os/python to these tests, creating the FastAPI application, testing the API, deploying the API in GCP using a Cloud Run, creating a frontend using Streamlit, deploying frontend in Streamlit cloud, setup collection of data from the deployed application, and instrument the API with system metrics and an alert.
 
+s253844 worked on implementing hydra files, training script using pytorch Lightning, integrating the training with WandB, hyperparameter sweeps, staging and productionizing models through GitHub actions (CI/CD). Also implemented a data changes checker using CML to comment on PRs. Furthermore, worked on setting the project up on GitHub, and by extension managing secrets on GitHub used in GitHub actions. 
+
 We have consulted generative AI for the following purposes:
 - How to integrate different frameworks with each other, e.g. Hydra and wandb
 - How to retrieve data from a GCP bucket 
