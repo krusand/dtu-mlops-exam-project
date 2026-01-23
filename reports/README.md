@@ -168,7 +168,7 @@ We did not use other open source frameworks, but we considered using MLFlow
 >
 > Answer:
 
-We used `uv` as we found it as a simple and effective tool to handle dependencies . To initialize `uv` we ran `uv init dtu-mlops-exam-project` which initialized the `pyproject.toml` and `uv.lock` files. Whenever a new dependency was added, one of us used the `uv add <dependency_name>` command and the corresponding dependency was added to the `pyproject.toml` file. The specific version was added to the `uv.lock` file.  
+We used `uv` as we found it as a simple and effective tool to handle dependencies. When using the project template (see Question 5) it already contained a `pyproject.toml` and `uv.lock` file. Thus, it was not necessarily to initialize `uv` by running `uv init <project_name>`. Whenever a new dependency was added, we used the `uv add <dependency_name>` command and the corresponding dependency was added to the `pyproject.toml` file. The specific version was added to the `uv.lock` file.  
 For a new team member to get an exact copy of our uv environment, he/she will have to first clone our repository by running `git clone https://github.com/krusand/dtu-mlops-exam-project.git`. Once the repository is cloned, the new team member should download `uv` following [this installation guide](https://docs.astral.sh/uv/getting-started/installation/) and then run `uv sync`. 
 
 ### Question 5
