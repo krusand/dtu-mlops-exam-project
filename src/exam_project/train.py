@@ -83,7 +83,7 @@ def train(cfg):
 
     early_stop_callback = EarlyStopping(
         monitor='validation_loss',  # metric to monitor
-        mode='min'                  # we want to minimize validation loss
+        mode='min',                 # we want to minimize validation loss
         min_delta=0.00,             # minimum change to qualify as improvement
         patience=5,                 # stop if no improvement after N epochs
     )
