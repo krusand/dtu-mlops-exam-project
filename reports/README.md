@@ -283,7 +283,22 @@ We set up DVC for our project. First we downloaded and preprocessed our data fro
 >
 > Answer:
 
---- question 11 fill here ---
+We used Github actions the orchestrate the workflows. We have 7 workflows.
+- Check for linting
+- Tests and coverage
+- Detect data drift
+- Staging and pre-productionizing
+- Upload production model to gc bucket
+- Vertex Docker image
+- Check for dataset changes
+
+We ran linting and unittesting (Tests and coverage) on three different operating systems (macOS, ubuntu, Windows) and two different python versions (3.12, 3.13). These were triggered by pushes to main or pull requests. Vertex docker image was also triggered by pushes to main or pull requests, but would make a dry run on pull request triggers. 
+
+We had one workflow which only triggered on pull requests with data changes. This would use CML to make a comment with a report of dataset statistics to the pull request. Thus before merging to main, we could see if the data was changed. 
+
+One workflow triggered periodically, every day at 23:30, using a cron scheduler. This job tested the data drift of the images uploaded to the frontend. We did not make a trigger for re-training, since our data is static. 
+
+Two workflows (staging and pre-productionizing) and (upload production model to gc bucket) were triggered by repository dispatches. They were triggered by a WandB. In combination, these enabled a trained model to go from staging to production, undergoing some testing. These workflows essentially implemented the continuous machine learning part, as we did not have to do anything when a model was trained. If the model was better than the production model, it would deploy automatically. Other options would have been to manually deploy the model, however we decided against this
 
 ## Running code and tracking experiments
 
