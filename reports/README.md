@@ -292,13 +292,19 @@ We used Github actions to orchestrate the workflows. We have 7 workflows.
 - Vertex Docker image
 - Check for dataset changes
 
+Generally, we cached the uv setup, and dvc data. The dvc cache had a large impact on runtimes, going from 10 minutes of pulling data, to 15 seconds. 
+
 We ran linting and unittesting (Tests and coverage) on three different operating systems (macOS, ubuntu, Windows) and two different python versions (3.12, 3.13). These were triggered by pushes to main or pull requests. Vertex docker image was also triggered by pushes to main or pull requests, but would make a dry run on pull request triggers. 
 
 We had one workflow which only triggered on pull requests with data changes. This would use CML to make a comment with a report of dataset statistics to the pull request. Thus before merging to main, we could see if the data was changed. 
 
 One workflow triggered periodically, every day at 23:30, using a cron scheduler. This job tested the data drift of the images uploaded to the frontend. We did not make a trigger for re-training, since our data is static. 
 
-Two workflows (staging and pre-productionizing) and (upload production model to gc bucket) were triggered by repository dispatches. They were triggered by a WandB. In combination, these enabled a trained model to go from staging to production, undergoing some testing. These workflows essentially implemented the continuous machine learning part, as we did not have to do anything when a model was trained. If the model was better than the production model, it would deploy automatically. Other options would have been to manually deploy the model, however we decided against this
+Two workflows (staging and pre-productionizing) and (upload production model to gc bucket) were triggered by repository dispatches. They were triggered by a WandB. In combination, these enabled a trained model to go from staging to production, undergoing some testing. These workflows essentially implemented the continuous machine learning part, as we did not have to do anything when a model was trained. If the model was better than the production model, it would deploy automatically. Other options would have been to manually deploy the model, however we decided against this. 
+These two workflows had a concurrency group per model architecture. We did this to ensure two train scripts didn't interefere with the staging and productionizing of the model (for example the problem of race conditions). 
+Examples of runs:
+- [Staged and preproductioned model workflow](https://github.com/krusand/dtu-mlops-exam-project/actions/runs/21283678975). Look at identify_event.check_event_type to see the payload. Look at test_and_pre_productionize.run_model_test and pre-productionize_model. 
+- [Production model workflow](https://github.com/krusand/dtu-mlops-exam-project/actions/runs/21283721511). Look at identify_event.check_event_type to see the payload. Look at upload_model.upload_model_to_GC_bucket to see the upload part.
 
 ## Running code and tracking experiments
 
