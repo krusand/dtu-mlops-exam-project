@@ -202,7 +202,7 @@ As expected we used the [course cookiecutter template](https://github.com/Skafte
 
 We are using `ruff` for linting as part of a GitHub workflow triggered on every push and pull-request to the main branch. The workflow is defined by the `linting.yaml` file in the `.github/workflows` folder and runs `ruff check src/exam_project/.`. In this way we ensure that our scripts follow the same overall formatting, e.g. no unused imports. When defining a function, we made sure to apply typing for the input arguments as well as the output variable(s). When details related to any code were important and/or unintuitive we found it useful to add a small comment explaining what is going on, e.g. the dimensions of a tensor or skipping an iteration in a loop. 
 
-We believe the concepts of formatting, typing and documentation makes it easier for larger teams to collaborate   
+We believe the concepts of formatting, typing and documentation makes it easier for larger teams to share their code and collaborate in general. When receiving a piece of code, e.g. a function, or a class, it is much easier to understand how it is working if the code is well-documented and uses proper typing. Using formatting can improve the understandability even more and just in general help aligning the code format across developers. 
 
 ## Version control
 
@@ -336,6 +336,10 @@ We used Hydra in combination with WandB. We logged the full Hydra config to the 
 
 We use WandB to track experiments and sweeps. As seen in two images, we tracked validation loss and validation accuracy, aswell as training loss and training accuracy. Furthermore the epoch number. The training loss is important because it can be used to see whether the model actually works. Training loss should go down every epoch. If it suddenly goes up, there clearly is a mistake in the code. Validation loss is important, because it shows when the model starts overfitting. Thus we can see when the Earlystopping callback would kick in. The validation accuracy thus informs us what the expected accuracy would be in the real world.For the sweeps, we didn't run this fully, since some of our models took a long time to train, but we tracked the validation loss and accuracy for this as well. We optimised hyperparameters like model dropout, learning rate and the number of epochs for the sweeps. The sweeps use a bayesian hyperparameter tuning strategy, which is efficient.
 
+![my_image](figures/q14_wandb_runs.png)
+![my_image](figures/q14_wandb_charts.png)
+![my_image](figures/q14_wandb_parameters.png)
+
 ### Question 15
 
 > **Docker is an important tool for creating containerized applications. Explain how you used docker in your**
@@ -438,7 +442,7 @@ For training we make use of an artifact registry (for storing the training docke
 >
 > Answer:
 
---- question 22 fill here ---
+Training was successfully performed with Vertex AI. We provide the VERTEXAI.md describing the steps to do this. Firstly the docker image for training is built (this is done either manually, or automatically as part of our GitHub workflow when we push to main); this builds and pushes the docker image to our GCP artifact registry. A service account was created and setup with the necessary roles for reading from the bucket and artifact registry, and running the Vertex AI job (roles including storage.objectAdmin, aiplatform.user). Finally the vertex_ai_job.yaml is required to configure the run; this includes the machine specifications, the image specifications (including environment variables), the service account, and any other optional arguments for the job that would ordinarily be included as command line arguments (e.g. the model type, model hyperparameters, number of epochs, batch size etc.). The train script utilises wandb for logging; an early stopping checkpoint and model checkpoint identifies the best model, which is then saved as an artifact and stored in the wandb registry.
 
 ## Deployment
 
@@ -455,7 +459,7 @@ For training we make use of an artifact registry (for storing the training docke
 >
 > Answer:
 
---- question 23 fill here ---
+We did manage to write an API for our model using FastAPI. The API exposes a /predict endpoint that accepts an uploaded image (and an optional manual label and model name), preprocesses the image by converting it to grayscale and resizing it to 48×48 and then runs inference with a PyTorch model in evaluation mode. A small “special” part is that the service can dynamically load different model checkpoints from the Bucket (controlled via environment variables), which makes it easy to switch models without redeploying code. We also added simple request validation by requiring specific headers (authorization and JSON accept) and the API can log requests by saving the uploaded image plus metadata (user label, prediction, confidence, checkpoint path, timestamp) to the Bucket.
 
 ### Question 24
 
@@ -521,7 +525,7 @@ For training we make use of an artifact registry (for storing the training docke
 >
 > Answer:
 
---- question 27 fill here ---
+We spent $3.96 (reflecting the total costs across our project combined with the learning exercises from one member of the team). The most costly services were Compute Engine ($1.82), Cloud Storage ($0.61), Cloud Run Functions ($0.60), Artifact Registry ($0.52) and Vertex AI ($0.28). The Compute Engine was primarily used for learning exercises so this can be ignored when considering project costs. The Cloud Storage was used for storing our data and production models, and dvc did not work with Google Drive, so this cost was worthwhile. The Cloud Run Functions were used for our API. The Artifact Registry stored our docker images for training and the API. The Vertex AI costs are relatively low because we only got that working in the last few days of the project; if we were to work on the project for another week this cost would likely increase and be comparable to the others already mentioned, or even higher. In general, working with GCP was a very steep learning curve, with lots of seperate services, and it was not initially clear how it would all fit togher. We feel mostly that it is intuitive once the idea of service accounts and IAM policies is accepted/understood. Understanding what the costs for services will be in advance is somewhat difficult; moreover, there is a moderate to high risk that a job could be running in the background, consuming credits, without the user being aware. That said, cloud is clearly important for group work and essential for training/inference with large models, so we are glad to have been exposed to it in this course.
 
 ### Question 28
 
@@ -554,7 +558,12 @@ For training we make use of an artifact registry (for storing the training docke
 >
 > Answer:
 
---- question 29 fill here ---
+The starting point of the diagram is our local setup. We initialised the directory with cookiecutter datascience with the https://github.com/SkafteNicki/mlops_template template. We then used uv to setup our python environment. For the training and model related scripts, we used Pytorch Lightning to reduce boilerplate Pytorch code. To configure experiments, we used Hydra files, the parameters of which could be interacted with through the command line, such as running uv run train models=cnn. The model artifacts, as well as configs and other metadata was tracked using WandB. To debug a code we used the VScode debugger. Data was stored on our local disk, and could be pulled using DVC from the Google Cloud Bucket. Linting was run primarily through Github Actions, were also sometimes ran locally. We used Git for versioning control. Our repo was hosted through GitHub, where we used GitHub Actions to run workflows. Our Git workflow was based on feature based branches, meaning every time we had a feature, we made a Pull Request. Pushes and pull request to main were protected, and needed to be approved by one other member of the group. Furthermore, 3 checks were done every time a pull request was made. Linting, pytests and test building a docker image for Vertex training. If our data was changed in the pull request, a workflow would run which printed a report on the pull request with the new data information.  
+The docker image for Vertex training uploads to the artifact registry. We could manually spin up a vertex training locally. Whenever this was done training, it would log a model to WandB. The model it just trained was set into staging. Through a WandB automation on the model registry, a payload was sent to repo/dispatches, where a GitHub action would test this new staging model against the current production model. If the staging was better, the action sets the production alias to the staging model, and removes the staging alias. There is an additional automation in WandB which sends payloads to repo/dispatches for production aliases. Then a production workflow would run, uploading the new production model to the model bucket on google cloud.  
+The API image is built locally and deployed to Cloud Run. We use streamlit as the frontend, where we have additionally deployed it streamlit cloud.Whenever users upload an image to the frontend, the backend stores the image in a bucket. Additionally the user must select what the correct emotion was. This accompanied with the predicted label, allows us to check for data drifting. Through a GitHub workflow triggered by a cron schedule, we check data drifting for the last 14 days. The report of which is found in reports.
+
+![my_image](figures/q29_architect_diagram.png)
+
 
 ### Question 30
 
