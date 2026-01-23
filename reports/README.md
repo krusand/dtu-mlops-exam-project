@@ -503,7 +503,7 @@ We did manage to write an API for our model using FastAPI. The API exposes a /pr
 >
 > Answer:
 
---- question 24 fill here ---
+We successfully deployed our API both locally and in the cloud. Locally, we ran the FastAPI and tested if it worked, which it did. For cloud deployment, we used Google Cloud Run, which builds using Cloud Build and deploys directly from our repository using the following command: *gcloud run deploy emotion-classifier2 --source . --region europe-west1 --platform managed --set-env-vars="USE_GCS=true,GCS_BUCKET_NAME=dtu-mlops-exam-project-data,SAVE_REQUESTS=true,REQUESTS_BUCKET_NAME=dtu-mlops-exam-project-data,REQUESTS_PREFIX=requests" --memory 4Gi --cpu 4*. The IAMPolicy was something we had to manually configure under the Cloud Run and set it to public access, so the frontend hosted on Streamlit cloud could access the API. When updating the code, the same command can be used to redeploy the build. The docs for the API can be found here [API Docs](https://emotion-classifier2-597500488480.europe-west1.run.app/docs)
 
 ### Question 25
 
@@ -627,6 +627,14 @@ We unanimously agree that GCP comes with a steep learning curve. It was difficul
 
 All members contributed to the project by developing code on branches, using git version control, creating pull requests, and reviewing each others' code via code reviews. All members pro-actively participated in building out the project, and functioned well with both individual and collaborative code development.  
 
-Student s260006 was primarily in charge of data loading and setting up GCP functionality for model training; this included setting up the storage bucket, artifact registry, service accounts, vertex AI jobs, and granting permissions to other team members. The student was responsible for: creating the data.py data-loading script, developing on the train.py script including early stopping callback, distributed data loading, and data distributed parallel training, setting up dvc data version control and pushing data to the GS bucket, building and testing the model-training docker file and pushing it to the artifact registry, developing a workflow to perform the docker build and push automatically on push to main, developing the entrypoint.sh and vertex_ai_job.yaml for training, creating GCP service accounts for training, running Vertex AI training jobs, and writing the VERTEXAI.md. Additionally, the student: developed a linting-check github workflow for pull requests, made minor contributions to the hydra config files, and experimented with model quantization, pruning and distilliation for the ViT model.  
+Student s260006 was primarily in charge of data loading and setting up GCP functionality for model training. The student was responsible for: creating the data.py data-loading script, developing on the train.py script including early stopping callback and DDP training, setting up dvc data version control, building and testing the model-training docker file and associated github workflow, and creating/running Vertex AI. Additionally, the student: developed a linting-check github workflow for pull requests, made minor contributions to the hydra config files, and experimented with model quantization, pruning and distilliation for the ViT model.
 
-s254120 worked primarily on implementing hydra (config files) and 
+s254120 worked primarily on implementing the initial model scripts, hydra config files, exploration of the wandb model registry and how to integrate it with training. In the last week the main contribution was setting up detection for data drift. 
+
+Student s214618 was in charge of creating the ViT (using a pretrained model) and ANN model, developing the unit tests, calculating code coverage, add caching/multi-os/python to these tests, creating the FastAPI application, testing the API, deploying the API in GCP using a Cloud Run, creating a frontend using Streamlit, deploying frontend in Streamlit cloud, setup collection of data from the deployed application, and instrument the API with system metrics and an alert.
+
+We have consulted generative AI for the following purposes:
+- How to integrate different frameworks with each other, e.g. Hydra and wandb
+- How to retrieve data from a GCP bucket 
+- Debugging
+- Generating ideas for testing/weaknesses
