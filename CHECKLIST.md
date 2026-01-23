@@ -97,24 +97,24 @@ will check the repositories and the code to verify your answers.
 
 ### Week 3
 
-1. ❌ Check how robust your model is towards data drifting (M27) (Seb)
-2. ❌ Setup collection of input-output data from your deployed application (M27) (Fred)
+1. ✅ Check how robust your model is towards data drifting (M27)
+2. ✅ Setup collection of input-output data from your deployed application (M27)
 3. ❌ Deploy to the cloud a drift detection API (M27) 
-4. ❌ Instrument your API with a couple of system metrics (M28) (Fred)
+4. ❌ Instrument your API with a couple of system metrics (M28)
 5. ❌ Setup cloud monitoring of your instrumented application (M28)
 6. ❌ Create one or more alert systems in GCP to alert you if your app is not behaving correctly (M28)
-7. ❌ If applicable, optimize the performance of your data loading using distributed data loading (M29) (Sam)
-8. ❌ If applicable, optimize the performance of your training pipeline by using distributed training (M30) (Sam)
+7. ✅ If applicable, optimize the performance of your data loading using distributed data loading (M29) 
+8. ✅ If applicable, optimize the performance of your training pipeline by using distributed training (M30)
 9. ❌ Play around with quantization, compilation and pruning for you trained models to increase inference speed (M31)
 
 ### Extra
 
 1. ❌ Write some documentation for your application (M32)
 2. ❌ Publish the documentation to GitHub Pages (M32)
-3. ❌ Revisit your initial project description. Did the project turn out as you wanted?
-4. ❌ Create an architectural diagram over your MLOps pipeline
-5. ❌ Make sure all group members have an understanding about all parts of the project
-6. ❌ Uploaded all your code to GitHub
+3. ✅ Revisit your initial project description. Did the project turn out as you wanted?
+4. ✅ Create an architectural diagram over your MLOps pipeline
+5. ✅ Make sure all group members have an understanding about all parts of the project
+6. ✅ Uploaded all your code to GitHub
 
 ## Group information
 
