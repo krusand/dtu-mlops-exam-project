@@ -141,7 +141,8 @@ with col2:
                         )
                     }
                     # manual_label is sent as Form field (multipart)
-                    data = {"manual_label": manual_label.lower()}
+                    data = {"manual_label": manual_label.lower(),
+                            "model_name": st.session_state.selected_model,}
 
                     headers = {
                         "Authorization": "dtu",
