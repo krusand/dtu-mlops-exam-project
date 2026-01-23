@@ -1,52 +1,54 @@
-# exam_project
+# Face Emotion Classification
 
-Contains code for exam project for DTU course MLOps
+Contains code for exam project for DTU course MLOps.
+
+Link to [API backend](https://emotion-classifier2-597500488480.europe-west1.run.app/docs)  
+Link to [API frontend](https://mlopsfrontenddemo.streamlit.app)
+
+authorization: "dtu"
 
 ## Project structure
 
 The directory structure of the project looks like this:
 ```txt
-├── .github/                  # Github actions and dependabot
-│   ├── dependabot.yaml
-│   └── workflows/
-│       └── tests.yaml
-├── configs/                  # Configuration files
-├── data/                     # Data directory
+├── CHECKLIST.md
+├── LICENSE
+├── README.md
+├── VERTEXAI.md
+├── data
 │   ├── processed
 │   └── raw
-├── dockerfiles/              # Dockerfiles
-│   ├── api.Dockerfile
-│   └── train.Dockerfile
-├── docs/                     # Documentation
-│   ├── mkdocs.yml
-│   └── source/
-│       └── index.md
-├── models/                   # Trained models
-├── notebooks/                # Jupyter notebooks
-├── reports/                  # Reports
-│   └── figures/
-├── src/                      # Source code
-│   ├── project_name/
-│   │   ├── __init__.py
-│   │   ├── api.py
-│   │   ├── data.py
-│   │   ├── evaluate.py
-│   │   ├── models.py
-│   │   ├── train.py
-│   │   └── visualize.py
-└── tests/                    # Tests
+├── data.dvc
+├── dockerfiles
+│   ├── api.dockerfile
+│   ├── train.dockerfile
+│   └── train_vertex.dockerfile
+├── docs
+│   ├── README.md
+│   ├── mkdocs.yaml
+│   └── source
+├── entrypoint.sh
+├── models
+├── pyproject.toml
+├── reports
+│   ├── README.md
+│   ├── data_drift_230126.html
+│   ├── figures
+│   ├── performance_comparison_230126.csv
+│   ├── report.html
+│   └── report.py
+├── src
+│   └── exam_project
+├── tasks.py
+├── tests
 │   ├── __init__.py
+│   ├── __pycache__
 │   ├── test_api.py
 │   ├── test_data.py
 │   └── test_model.py
-├── .gitignore
-├── .pre-commit-config.yaml
-├── LICENSE
-├── pyproject.toml            # Python project file
-├── README.md                 # Project README
-├── requirements.txt          # Project requirements
-├── requirements_dev.txt      # Development requirements
-└── tasks.py                  # Project tasks
+├── uv.lock
+├── vertex_ai_job_template.yaml
+└── wandb
 ```
 
 
