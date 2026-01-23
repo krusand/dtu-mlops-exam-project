@@ -46,7 +46,7 @@ def extract_features(images):
     return np.array(features)
 
 
-def filter_date_blobs(date_blobs: Iterable[Blob], prefix: str, last_n_days: int) -> Set[str]:
+def filter_date_blobs(date_blobs: Iterable[Blob], prefix: str, last_n_days: int) -> List[str]:
     """Filters a series of date folders (blobs) in a GCP bucket based on last n days."""
     # Filtering date blobs
     valid_date_folders = set()
@@ -73,7 +73,12 @@ def filter_date_blobs(date_blobs: Iterable[Blob], prefix: str, last_n_days: int)
         if folder_date >= cutoff_date:
             valid_date_folders.add(date_str)
 
-    return valid_date_folders
+    # Sorting valid_date_folders in ascending order
+    s1 = pd.Series(list(valid_date_folders))
+    s2 = s1.apply(pd.to_datetime, format="%d-%m-%Y").sort_values()
+    s3 = s2.dt.strftime("%d-%m-%Y").tolist()
+
+    return s3
 
 
 def load_labels_from_json(blob: Blob) -> dict[str, str]:
@@ -95,8 +100,8 @@ def load_images_and_labels_from_date_folder(bucket: Bucket,
                                             ) -> Tuple[List[Tensor], List[int]]:
     images = []
     labels = []
-    blobs = list(bucket.list_blobs(prefix=f"{prefix}{date_folder}/"))
-
+    blobs = list(bucket.list_blobs(prefix=f"{prefix}/{date_folder}"))
+    print(blobs)
     # Finding the JSON blob
     json_blob = next((b for b in blobs if b.name.endswith(".json")), None)
 
@@ -115,13 +120,18 @@ def load_images_and_labels_from_date_folder(bucket: Bucket,
         if image_name not in label_lookup:
             # Skip images without labels
             continue
+        
+        image_true_label = label_lookup[image_name]
+
+        if image_true_label not in class_to_idx:
+            # Skip images with an invalid true label, e.g. null
+            continue
 
         image_bytes = blob.download_as_bytes()
         img = Image.open(BytesIO(image_bytes)).convert("RGB")
         img = transform(img)
-
         images.append(img)
-        labels.append(class_to_idx[label_lookup[image_name]])
+        labels.append(class_to_idx[image_true_label])
 
     return images, labels
 
@@ -158,19 +168,22 @@ def main(cfg):
     date_blobs = bucket.list_blobs(prefix=prefix)
     print(f"Date blobs: {date_blobs}")
     # Filter date_blobs
-    valid_date_blobs = filter_date_blobs(date_blobs=date_blobs, prefix=prefix, last_n_days=14)
-    print(f"Validat date blobs: {valid_date_blobs}")
-    # Retrieving json file from date blob of today
-    first_date = datetime.now(timezone.utc).strftime("%d-%m-%Y")
+    window = cfg.hyperparameters.data_drift_window
+    valid_date_blobs = filter_date_blobs(date_blobs=date_blobs, prefix=prefix, last_n_days=window)
+    print(f"Valid date blobs: {valid_date_blobs}")
+    if len(valid_date_blobs) == 0:
+        raise LookupError(f"No images has been uploaded in the last {window} days")
 
+    # Retrieving json file from most recent date blob
+    most_recent_date = valid_date_blobs[-1]
     json_blob = next(
-        b for b in bucket.list_blobs(prefix=f"{prefix}/{first_date}/")
+        b for b in bucket.list_blobs(prefix=f"{prefix}/{most_recent_date}/")
         if b.name.endswith(".json")
     )
 
-    # If no images has been uploaded today
+    # Raise error if the json file does not exist
     if json_blob is None:
-        raise FileNotFoundError(f"No JSON found for today ({first_date})")
+        raise FileNotFoundError(f"No JSON found in the folder of {most_recent_date}")
 
     # Dictionary to map labels to indices
     class_to_idx = extract_class_mapping_from_json(json_blob)
