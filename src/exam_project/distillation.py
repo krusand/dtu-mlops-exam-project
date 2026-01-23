@@ -1,12 +1,17 @@
-from pathlib import Path
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
+
+from pathlib import Path
+from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 from torch.utils.data import DataLoader
+
+from pytorch_lightning import LightningModule
+from pytorch_lightning import Trainer
 
 from exam_project.data import load_data
 from exam_project.model import ViTClassifier, BaseCNN
 
-from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 
 ROOT = Path(__file__).resolve().parents[2]    # go two levels up to project root
 DEVICE = 'cuda' if torch.cuda.is_available() else 'mps' if torch.mps.is_available() else 'cpu'
@@ -29,9 +34,6 @@ def load_model(model_file_name: str = "checkpoint.pth", device: str = DEVICE) ->
     model.to(device).eval()
 
     return model
-
-import torch.nn.functional as F
-from pytorch_lightning import LightningModule
 
 class DistillationModule(LightningModule):
     def __init__(self, teacher_model: nn.Module, student_model: nn.Module, lr: float = 1e-4, alpha: float = 0.5, temperature: float = 2.0):
@@ -131,7 +133,6 @@ early_stop_callback = EarlyStopping(
     )
 
 # Trainer
-from pytorch_lightning import Trainer
 trainer = Trainer(
     max_epochs=10,
     accelerator=DEVICE,
