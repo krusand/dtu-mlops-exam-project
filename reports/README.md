@@ -368,7 +368,9 @@ We use docker images and containers for training with Vertex AI. The train_verte
 >
 > Answer:
 
---- question 16 fill here ---
+We used the built-in Python debugger in VS Code. It allowed us to set checkpoints for the part of the code that we suspected to be causing the bug. In this way it was possible to check the type and value of each variable without having to write print statements, which would have to be deleted after performing the debugging.  
+
+We did not perform any profiling as we wanted to make the basics of our code work first. When reachiing week 2 and 3 of the project we spent a lot of time on integrating different frameworks with each other. Thus, we did not have time to perform proper profiling of our code, even though it could have helped us identifying points for optimization. 
 
 ## Working in the cloud
 
@@ -418,7 +420,8 @@ For training we make use of an artifact registry (for storing the training docke
 >
 > Answer:
 
---- question 20 fill here ---
+![my_image](figures/q20_artifact_registry1.png)
+![my_image](figures/q20_artifact_registry2.png)
 
 ### Question 21
 
