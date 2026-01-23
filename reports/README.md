@@ -148,7 +148,7 @@ s214618, s260006, s254120, s253844
 >
 > Answer:
 
---- question 3 fill here ---
+We did not use other open source frameworks, but we considered using MLFlow
 
 ## Coding environment
 
@@ -391,7 +391,7 @@ We use docker images and containers for training with Vertex AI. The train_verte
 
 We used the built-in Python debugger in VS Code. It allowed us to set checkpoints for the part of the code that we suspected to be causing the bug. In this way it was possible to check the type and value of each variable without having to write print statements, which would have to be deleted after performing the debugging.  
 
-We did not perform any profiling as we wanted to make the basics of our code work first. When reachiing week 2 and 3 of the project we spent a lot of time on integrating different frameworks with each other. Thus, we did not have time to perform proper profiling of our code, even though it could have helped us identifying points for optimization. 
+We did not perform any profiling as we wanted to make the basics of our code work first. When reachiing week 2 and 3 of the project we spent a lot of time on integrating different frameworks with each other. Thus, we did not have time to perform proper profiling of our code, even though it could have helped us identifying points for optimization. When training our models (ANN, CNN, ViT), we could also see from the wandb experiments, that the ViT model was the bottleneck in terms of training. This was another reason for why did not perform profiling. 
 
 ## Working in the cloud
 
@@ -423,7 +423,7 @@ For training we make use of an artifact registry (for storing the training docke
 >
 > Answer:
 
---- question 18 fill here ---
+We used Vertex AI for training instead of Compute Engine. We only needed this for training and Vertex AI is specially built for this, whereas Compute Engine is more for general purpose tasks.
 
 ### Question 19
 
@@ -568,7 +568,7 @@ We spent $3.96 (reflecting the total costs across our project combined with the 
 >
 > Answer:
 
---- question 28 fill here ---
+We implemented a frontend for our API using Streamlit to make the model easier to demo and interact with. This frontend is hosted on Streamlit cloud and it connects to the deployed Cloud Run backend using requests, fetches the list of available models from the /models/ endpoint and lets the user select which model to run (CNN, ANN or ViT). Users can upload an image, then they have to choose a manual “ground-truth” label and then trigger a prediction via a request to /predict/ using the required headers. The UI displays the predicted emotion, confidence score, and a probability breakdown as both a bar chart and a table, and it also shows whether the request was saved to the Bucket (including the day folder and index).
 
 ### Question 29
 
@@ -604,7 +604,7 @@ The API image is built locally and deployed to Cloud Run. We use streamlit as th
 >
 > Answer:
 
---- question 30 fill here ---
+We unanimously agree that GCP comes with a steep learning curve. It was difficult to work on a single project where permissions were limited for non-owner users. Eventually we gave everyone editor access which granted the large majority of permissions that were required for any one member at any one time, but there were still times when the owner was the only one who could grant permissions. More generally, it was initially unintuitive that individual jobs required an associated service account that itself had been granted the required permissions; once this general rule was understood, GCP felt more tangible.Setting up hydra config files was also difficult at first. Combining the nested folder structure with optional .yaml files and configuring those correctly was a challenge, but once the correct formatting was established it was intuitive to build on this.Understanding how all the frameworks fitted together was also a challenge. For example, we were training models and saving them both to the GS bucket as well as the wandb registry; eventually we decided to save new training models just to the wandb registry, then only upload production-grade models to the GC bucket via a CI/CD workflow.
 
 ### Question 31
 
