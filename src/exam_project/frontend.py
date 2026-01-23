@@ -6,7 +6,7 @@ import requests
 import streamlit as st
 from PIL import Image
 
-BACKEND_URL = os.getenv("BACKEND_URL", "https://emotion-classifier-597500488480.europe-west1.run.app")
+BACKEND_URL = os.getenv("BACKEND_URL", "https://emotion-classifier2-597500488480.europe-west1.run.app")
 
 EMOTION_LABELS = ["angry", "disgust", "fear", "happy", "neutral", "sad", "surprise"]
 
