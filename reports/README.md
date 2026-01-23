@@ -632,4 +632,4 @@ Student s260006 was primarily in charge of data loading and setting up GCP funct
 s254120 worked primarily on implementing hydra (config files) and 
 
 
-s253844 worked on implementing hydra files, training script using pytorch lightning, integrating the training with WandB, hyperparameter sweeps, staging and productionizing models through GitHub actions (CI/CD).Furthermore, worked on setting the project up on GitHub, and by extension managing secrets on GitHub used in GitHub actions. 
+s253844 worked on implementing hydra files, training script using pytorch Lightning, integrating the training with WandB, hyperparameter sweeps, staging and productionizing models through GitHub actions (CI/CD). Also implemented a data changes checker using CML to comment on PRs. Furthermore, worked on setting the project up on GitHub, and by extension managing secrets on GitHub used in GitHub actions. 
