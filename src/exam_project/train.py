@@ -11,7 +11,7 @@ from loguru import logger
 from omegaconf import OmegaConf
 
 from pytorch_lightning import Trainer
-from pytorch_lightning.callbacks import ModelCheckpoint
+from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.utilities.rank_zero import rank_zero_only
 
@@ -81,6 +81,14 @@ def train(cfg):
         save_top_k=1# The best model (lowest validation loss) is saved
     )
 
+    early_stop_callback = EarlyStopping(
+        monitor='validation_loss',  # metric to monitor
+        mode='min',                 # we want to minimize validation loss
+        min_delta=0.00,             # minimum change to qualify as improvement
+        patience=5,                 # stop if no improvement after N epochs
+    )
+
+
     #Note log_model="all" saves a model every epoch (x2 files per model: the model artifact and meta data).
     trainer_args = {"max_epochs": cfg.trainer.max_epochs
                     , 'accelerator': cfg.trainer.accelerator
@@ -90,7 +98,7 @@ def train(cfg):
                     , 'limit_train_batches': cfg.trainer.limit_train_batches
                     , 'limit_val_batches': cfg.trainer.limit_val_batches
                     , 'log_every_n_steps': cfg.trainer.log_every_n_steps
-                    , "callbacks": [checkpoint_callback]}
+                    , "callbacks": [checkpoint_callback, early_stop_callback]}
     logger.debug(f"{trainer_args = }")
     logger.info("Finished cfg setup")
 
