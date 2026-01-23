@@ -193,7 +193,7 @@ def _infer_extension(upload: UploadFile) -> str:
         return ".jpg"
     if "png" in ct:
         return ".png"
-    return ".png"
+    return ".test"
 
 
 def _get_next_daily_index(bucket: storage.Bucket, day_prefix: str) -> int:
@@ -263,44 +263,46 @@ def save_request_to_gcs(raw_bytes: bytes, upload: UploadFile, user_label: Option
     day_folder = get_folder_date_str()
     day_prefix = f"{REQUESTS_PREFIX}/{day_folder}/"
     ext = _infer_extension(upload)
+    if ext != ".test":
+        idx = _get_next_daily_index(bucket, day_prefix)
 
-    idx = _get_next_daily_index(bucket, day_prefix)
+        for _ in range(200):
+            image_name = f"{idx}{ext}"
+            image_object = f"{day_prefix}{image_name}"
 
-    for _ in range(200):
-        image_name = f"{idx}{ext}"
-        image_object = f"{day_prefix}{image_name}"
+            ok = _upload_new_object_no_overwrite(
+                bucket=bucket,
+                object_name=image_object,
+                data=raw_bytes,
+                content_type=upload.content_type or "application/octet-stream",
+            )
+            if ok:
+                daily_metadata_object = f"{day_prefix}{DAILY_METADATA_FILENAME}"
 
-        ok = _upload_new_object_no_overwrite(
-            bucket=bucket,
-            object_name=image_object,
-            data=raw_bytes,
-            content_type=upload.content_type or "application/octet-stream",
-        )
-        if ok:
-            daily_metadata_object = f"{day_prefix}{DAILY_METADATA_FILENAME}"
+                entry = {
+                    "image_name": image_name,
+                    "user_label": user_label,
+                    "model_output": prediction,
+                    "model": {"model_name": model_used, "checkpoint_path": loaded_model_path},
+                    "timestamp_utc": datetime.now(timezone.utc).isoformat(),
+                    "original_filename": upload.filename,
+                    "content_type": upload.content_type,
+                    "bytes": len(raw_bytes),
+                }
 
-            entry = {
-                "image_name": image_name,
-                "user_label": user_label,
-                "model_output": prediction,
-                "model": {"model_name": model_used, "checkpoint_path": loaded_model_path},
-                "timestamp_utc": datetime.now(timezone.utc).isoformat(),
-                "original_filename": upload.filename,
-                "content_type": upload.content_type,
-                "bytes": len(raw_bytes),
-            }
+                _append_to_daily_metadata(bucket, daily_metadata_object, entry)
 
-            _append_to_daily_metadata(bucket, daily_metadata_object, entry)
+                return {
+                    "bucket": REQUESTS_BUCKET_NAME,
+                    "day_folder": day_folder,
+                    "index": idx,
+                    "image_gs_uri": f"gs://{REQUESTS_BUCKET_NAME}/{image_object}",
+                    "daily_metadata_gs_uri": f"gs://{REQUESTS_BUCKET_NAME}/{daily_metadata_object}",
+                }
 
-            return {
-                "bucket": REQUESTS_BUCKET_NAME,
-                "day_folder": day_folder,
-                "index": idx,
-                "image_gs_uri": f"gs://{REQUESTS_BUCKET_NAME}/{image_object}",
-                "daily_metadata_gs_uri": f"gs://{REQUESTS_BUCKET_NAME}/{daily_metadata_object}",
-            }
-
-        idx += 1
+            idx += 1
+    if ext == ".test":
+        raise ValueError("This is a test file. Not saving to GCS")
 
     raise RuntimeError("Could not allocate a unique daily image index after many attempts.")
 
