@@ -357,9 +357,10 @@ We used Hydra in combination with WandB. We logged the full Hydra config to the 
 
 We use WandB to track experiments and sweeps. As seen in two images, we tracked validation loss and validation accuracy, aswell as training loss and training accuracy. Furthermore the epoch number. The training loss is important because it can be used to see whether the model actually works. Training loss should go down every epoch. If it suddenly goes up, there clearly is a mistake in the code. Validation loss is important, because it shows when the model starts overfitting. Thus we can see when the Earlystopping callback would kick in. The validation accuracy thus informs us what the expected accuracy would be in the real world.For the sweeps, we didn't run this fully, since some of our models took a long time to train, but we tracked the validation loss and accuracy for this as well. We optimised hyperparameters like model dropout, learning rate and the number of epochs for the sweeps. The sweeps use a bayesian hyperparameter tuning strategy, which is efficient.
 
-![my_image](figures/q14_wandb_runs.png)
-![my_image](figures/q14_wandb_charts.png)
-![my_image](figures/q14_wandb_parameters.png)
+<img src="figures/q14_wandb_runs.png" alt="diagram" width="100%"/>
+<img src="figures/q14_wandb_charts.png" alt="diagram" width="100%"/>
+<img src="figures/q14_wandb_parameters.png" alt="diagram" width="100%"/>
+
 
 ### Question 15
 
@@ -432,10 +433,10 @@ We used Vertex AI for training instead of Compute Engine. We only needed this fo
 >
 > Answer:
 Bucket overview:
-![my_image](figures/q19_bucket1.png)  
+<img src="figures/q19_bucket1.png" alt="diagram" width="100%"/>
 
 CNN model blob:
-![my_image](figures/q19_bucket2.png)
+<img src="figures/q19_bucket2.png" alt="diagram" width="100%"/>
 
 ### Question 20
 
@@ -444,8 +445,8 @@ CNN model blob:
 >
 > Answer:
 
-![my_image](figures/q20_artifact_registry1.png)
-![my_image](figures/q20_artifact_registry2.png)
+<img src="figures/q20_artifact_registry1.png" alt="diagram" width="100%"/>
+<img src="figures/q20_artifact_registry2.png" alt="diagram" width="100%"/>
 
 ### Question 21
 
@@ -454,7 +455,7 @@ CNN model blob:
 >
 > Answer:
 
-![my_image](figures/q21_cloud_build.png)
+<img src="figures/q21_cloud_build.png" alt="diagram" width="100%"/>
 
 ### Question 22
 
@@ -591,7 +592,7 @@ The starting point of the diagram is our local setup. We initialised the directo
 The docker image for Vertex training uploads to the artifact registry. We could manually spin up a vertex training locally. Whenever this was done training, it would log a model to WandB. The model it just trained was set into staging. Through a WandB automation on the model registry, a payload was sent to repo/dispatches, where a GitHub action would test this new staging model against the current production model. If the staging was better, the action sets the production alias to the staging model, and removes the staging alias. There is an additional automation in WandB which sends payloads to repo/dispatches for production aliases. Then a production workflow would run, uploading the new production model to the model bucket on google cloud.  
 The API image is built locally and deployed to Cloud Run. We use streamlit as the frontend, where we have additionally deployed it streamlit cloud.Whenever users upload an image to the frontend, the backend stores the image in a bucket. Additionally the user must select what the correct emotion was. This accompanied with the predicted label, allows us to check for data drifting. Through a GitHub workflow triggered by a cron schedule, we check data drifting for the last 14 days. The report of which is found in reports.
 
-![my_image](figures/q29_architect_diagram.png)
+<img src="figures/q29_architect_diagram.png" alt="diagram" width="100%"/>
 
 
 ### Question 30
@@ -624,4 +625,8 @@ We unanimously agree that GCP comes with a steep learning curve. It was difficul
 > *We have used ChatGPT to help debug our code. Additionally, we used GitHub Copilot to help write some of our code.*
 > Answer:
 
-All members contributed to the project by developing code on branches, using git version control, creating pull requests, and reviewing each others' code via code reviews. All members pro-actively participated in building out the project, and functioned well with both individual and collaborative code development.Student s260006 was primarily in charge of data loading and setting up GCP functionality for model training; this included setting up the storage bucket, artifact registry, service accounts, vertex AI jobs, and granting permissions to other team members. The student was responsible for: creating the data.py data-loading script, developing on the train.py script including early stopping callback, distributed data loading, and data distributed parallel training, setting up dvc data version control and pushing data to the GS bucket, building and testing the model-training docker file and pushing it to the artifact registry, developing a workflow to perform the docker build and push automatically on push to main, developing the entrypoint.sh and vertex_ai_job.yaml for training, creating GCP service accounts for training, running Vertex AI training jobs, and writing the VERTEXAI.md. Additionally, the student: developed a linting-check github workflow for pull requests, made minor contributions to the hydra config files, and experimented with model quantization, pruning and distilliation for the ViT model.
+All members contributed to the project by developing code on branches, using git version control, creating pull requests, and reviewing each others' code via code reviews. All members pro-actively participated in building out the project, and functioned well with both individual and collaborative code development.  
+
+Student s260006 was primarily in charge of data loading and setting up GCP functionality for model training; this included setting up the storage bucket, artifact registry, service accounts, vertex AI jobs, and granting permissions to other team members. The student was responsible for: creating the data.py data-loading script, developing on the train.py script including early stopping callback, distributed data loading, and data distributed parallel training, setting up dvc data version control and pushing data to the GS bucket, building and testing the model-training docker file and pushing it to the artifact registry, developing a workflow to perform the docker build and push automatically on push to main, developing the entrypoint.sh and vertex_ai_job.yaml for training, creating GCP service accounts for training, running Vertex AI training jobs, and writing the VERTEXAI.md. Additionally, the student: developed a linting-check github workflow for pull requests, made minor contributions to the hydra config files, and experimented with model quantization, pruning and distilliation for the ViT model.  
+
+s254120 worked primarily on implementing hydra (config files) and 
