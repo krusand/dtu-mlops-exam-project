@@ -12,7 +12,7 @@ from PIL import Image
 # Use cloud API or local API
 API_URL = os.getenv(
     "API_URL",
-    "https://emotion-classifier-597500488480.europe-west1.run.app"
+    "https://emotion-classifier2-597500488480.europe-west1.run.app"
 )
 
 # Request settings for cloud resilience
