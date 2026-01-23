@@ -283,7 +283,7 @@ We set up DVC for our project. First we downloaded and preprocessed our data fro
 >
 > Answer:
 
-We used Github actions the orchestrate the workflows. We have 7 workflows.
+We used Github actions to orchestrate the workflows. We have 7 workflows.
 - Check for linting
 - Tests and coverage
 - Detect data drift
@@ -425,8 +425,11 @@ For training we make use of an artifact registry (for storing the training docke
 > **You can take inspiration from [this figure](figures/bucket.png).**
 >
 > Answer:
+Bucket overview:
+![my_image](figures/q19_bucket1.png)  
 
---- question 19 fill here ---
+CNN model blob:
+![my_image](figures/q19_bucket2.png)
 
 ### Question 20
 
@@ -509,7 +512,7 @@ We did manage to write an API for our model using FastAPI. The API exposes a /pr
 >
 > Answer:
 
---- question 25 fill here ---
+For unit testing we used pytest by treating the FastAPI service as a black box and sending real HTTP requests to the deployed Cloud Run endpoint. The tests cover header validation (missing/invalid authorization and accept headers), file handling (missing file, valid file upload) and response correctness (HTTP 200, JSON content-type, required response fields, valid emotion label, and confidence). Because Cloud Run can have cold starts and transient failures, we added a retry helper with a long timeout and exponential backoff for timeouts and rate-limiting (429). We also included a simple consistency check to ensure the same image produces the same prediction and probability output across repeated calls. We did not run a dedicated load test in this setup, but to do so, we would script concurrent requests against /predict and measure latency/throughput and the point at which Cloud Run begins returning 429 responses.
 
 ### Question 26
 
@@ -613,4 +616,4 @@ The API image is built locally and deployed to Cloud Run. We use streamlit as th
 > *We have used ChatGPT to help debug our code. Additionally, we used GitHub Copilot to help write some of our code.*
 > Answer:
 
---- question 31 fill here ---
+All members contributed to the project by developing code on branches, using git version control, creating pull requests, and reviewing each others' code via code reviews. All members pro-actively participated in building out the project, and functioned well with both individual and collaborative code development.Student s260006 was primarily in charge of data loading and setting up GCP functionality for model training; this included setting up the storage bucket, artifact registry, service accounts, vertex AI jobs, and granting permissions to other team members. The student was responsible for: creating the data.py data-loading script, developing on the train.py script including early stopping callback, distributed data loading, and data distributed parallel training, setting up dvc data version control and pushing data to the GS bucket, building and testing the model-training docker file and pushing it to the artifact registry, developing a workflow to perform the docker build and push automatically on push to main, developing the entrypoint.sh and vertex_ai_job.yaml for training, creating GCP service accounts for training, running Vertex AI training jobs, and writing the VERTEXAI.md. Additionally, the student: developed a linting-check github workflow for pull requests, made minor contributions to the hydra config files, and experimented with model quantization, pruning and distilliation for the ViT model.
