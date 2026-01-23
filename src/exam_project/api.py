@@ -323,7 +323,7 @@ async def list_models():
 async def predict(
     file: Optional[UploadFile] = File(None),
     manual_label: Optional[str] = Form(None),
-    model_name: Optional[str] = None,
+    model_name: Optional[str] = Form(None),
     authorization: Optional[str] = Header(None),
     accept: Optional[str] = Header(None),
 ):
